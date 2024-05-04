@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "",
   "engines": {
-    "node": "20.12.2"
+    "node": "20.11.1"
   },
   "author": "",
   "private": true,
