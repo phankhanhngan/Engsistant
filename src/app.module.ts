@@ -19,6 +19,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from './modules/users/users.module';
 import { AWSModule } from './modules/aws/aws.module';
 import { PreauthMiddleware } from './modules/auth/preauth.middleware';
+import { GoogleClassroomModule } from './modules/google_classroom/google-classroom.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { PreauthMiddleware } from './modules/auth/preauth.middleware';
     AuthModule,
     UsersModule,
     AWSModule,
+    GoogleClassroomModule,
   ],
 
   controllers: [AppController],
