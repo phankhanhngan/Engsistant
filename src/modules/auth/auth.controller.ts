@@ -47,13 +47,11 @@ export class AuthController {
   async login(@Res() res: Response, @Req() req, @Body() loginDto: LoginDto) {
     try {
       const firebaseInfo = req.firebaseUser;
-      console.log(firebaseInfo);
       if (new Date(firebaseInfo.exp * 1000) < new Date()) {
         throw new HttpException('Token expired', HttpStatus.UNAUTHORIZED);
       }
 
       const accessToken = await this.authService.googleLogin(firebaseInfo);
-      console.log(accessToken);
       res.status(200).json({
         message: 'Login Successfully',
         status: ApiResponseStatus.SUCCESS,
