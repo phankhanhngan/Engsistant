@@ -17,11 +17,12 @@ import { UsersService } from './users.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiResponseStatus } from 'src/common/enum/common.enum';
+import { ApiResponseStatus, Role } from 'src/common/enum/common.enum';
 import { UserRtnDto } from '../auth/dtos/UserRtnDto.dto';
 import { plainToInstance } from 'class-transformer';
 import { AuthorizeTypeDto } from '../google_classroom/swagger_types/Authorize.dto';
 import { SetGoogleTokenDto } from './dtos/SetGoogleToken.dto';
+import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 
 @UseGuards(JwtAuthGuard)
 @ApiTags('users')
@@ -57,7 +58,7 @@ export class UsersController {
 
   @Post('/set-google-token')
   @UseGuards(JwtAuthGuard)
-  // User role guard
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiResponse({

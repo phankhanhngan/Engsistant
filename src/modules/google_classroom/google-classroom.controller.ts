@@ -17,15 +17,16 @@ import { Logger } from 'winston';
 import { Response } from 'express';
 import { GoogleClassroomService } from './google-classroom.service';
 import { ApiResponse } from '@nestjs/swagger';
-import { ApiResponseStatus } from 'src/common/enum/common.enum';
+import { ApiResponseStatus, Role } from 'src/common/enum/common.enum';
 import { AuthorizeTypeDto } from './swagger_types/Authorize.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { ListClassDTO } from './swagger_types/ListClass.dto';
 import { ImportClassDto } from './dtos/ImportClass.dto';
+import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 
-@Controller('classes')
+@Controller('google/classes')
 @UseGuards(JwtAuthGuard)
-// Userole guard
+@UseGuards(RoleAuthGuard([Role.TEACHER]))
 export class GoogleClassroomController {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,

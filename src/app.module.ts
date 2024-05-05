@@ -17,9 +17,10 @@ import { HandlebarsAdapter, MailerModule } from '@nest-modules/mailer';
 import { join } from 'path';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from './modules/users/users.module';
-import { AWSModule } from './modules/aws/aws.module';
 import { PreauthMiddleware } from './modules/auth/preauth.middleware';
 import { GoogleClassroomModule } from './modules/google_classroom/google-classroom.module';
+import { TeacherModule } from './modules/teacher/teacher.module';
+import { StudentModule } from './modules/student/student.module';
 
 @Module({
   imports: [
@@ -64,6 +65,8 @@ import { GoogleClassroomModule } from './modules/google_classroom/google-classro
     AuthModule,
     UsersModule,
     GoogleClassroomModule,
+    TeacherModule,
+    StudentModule,
   ],
 
   controllers: [AppController],

@@ -2,15 +2,13 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { google } from 'googleapis';
-import crypto, { randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 import { User } from 'src/entities';
 import { GoogleClassroomInfoDto } from './dtos/GoogleClassroomInfo.dto';
-import { Http } from 'winston/lib/winston/transports';
 import { ImportClassInfoDto } from './dtos/ImportClass.dto';
 import { Class } from 'src/entities/class.entity';
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { Role } from 'src/common/enum/common.enum';
 
 @Injectable()
 export class GoogleClassroomService {
