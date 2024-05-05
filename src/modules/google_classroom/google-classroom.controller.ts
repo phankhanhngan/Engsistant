@@ -26,7 +26,6 @@ import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 
 @Controller('google/classes')
 @UseGuards(JwtAuthGuard)
-@UseGuards(RoleAuthGuard([Role.TEACHER]))
 export class GoogleClassroomController {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
@@ -34,7 +33,6 @@ export class GoogleClassroomController {
   ) {}
 
   @Post('/authorize')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiResponse({
@@ -42,12 +40,20 @@ export class GoogleClassroomController {
     type: AuthorizeTypeDto,
     description: `Get the authorize url that redirects to Google classroom authorization page.`,
   })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
   async authorize(@Req() req, @Res() res: Response) {
     try {
-      const authorizeUrl = await this.googleClassroomService.authorize();
+      const user = req.user;
+      let isAuthorized = true;
+      let authorizeUrl = '';
+      if (user.googleRefreshToken == null) {
+        isAuthorized = false;
+        authorizeUrl = await this.googleClassroomService.authorize();
+      }
       res.status(200).json({
         message: 'Get the authorization URL successfully',
         status: ApiResponseStatus.SUCCESS,
+        isAuthorized: isAuthorized,
         authorizeUrl: authorizeUrl,
       });
     } catch (error) {
@@ -64,12 +70,12 @@ export class GoogleClassroomController {
   }
 
   @Get('/list-all')
-  @UseGuards(JwtAuthGuard)
   @ApiResponse({
     status: 200,
     type: ListClassDTO,
     description: `List all classes of current user. If the user has not authorized, it will return an empty array`,
   })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
   async listClassroom(@Req() req, @Res() res: Response) {
     try {
       const user = req.user;
@@ -95,12 +101,12 @@ export class GoogleClassroomController {
   }
 
   @Post('/import')
-  @UseGuards(JwtAuthGuard)
   @ApiResponse({
     status: 200,
     type: ListClassDTO,
     description: `List all classes of current user. If the user has not authorized, it will return an empty array`,
   })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
   async importClassroom(
     @Req() req,
     @Res() res: Response,
