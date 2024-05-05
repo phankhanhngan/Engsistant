@@ -1,11 +1,17 @@
 import {
+  Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Inject,
   Logger,
+  Post,
   Req,
   Res,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
@@ -14,6 +20,8 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiResponseStatus } from 'src/common/enum/common.enum';
 import { UserRtnDto } from '../auth/dtos/UserRtnDto.dto';
 import { plainToInstance } from 'class-transformer';
+import { AuthorizeTypeDto } from '../google_classroom/swagger_types/Authorize.dto';
+import { SetGoogleTokenDto } from './dtos/SetGoogleToken.dto';
 
 @UseGuards(JwtAuthGuard)
 @ApiTags('users')
@@ -40,6 +48,47 @@ export class UsersController {
     } catch (error) {
       this.logger.error(
         'Calling getCurrentUserInfo()',
+        error,
+        UsersController.name,
+      );
+      throw error;
+    }
+  }
+
+  @Post('/set-google-token')
+  @UseGuards(JwtAuthGuard)
+  // User role guard
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: AuthorizeTypeDto,
+    description: `Get the authorize url that redirects to Google classroom authorization page.`,
+  })
+  async setGoogleToken(
+    @Req() req,
+    @Res() res,
+    @Body() setTokenDto: SetGoogleTokenDto,
+  ) {
+    try {
+      const user = req.user;
+      const code = setTokenDto.code;
+      const isSucess = await this.usersService.setGoogleToken(user, code);
+
+      if (isSucess) {
+        res.status(200).json({
+          message: 'Set Google token successfully',
+          status: ApiResponseStatus.SUCCESS,
+        });
+      } else {
+        res.status(400).json({
+          message: 'Set Google token failed',
+          status: ApiResponseStatus.FAILURE,
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        'Calling setGoogleToken()',
         error,
         UsersController.name,
       );

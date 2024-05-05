@@ -8,7 +8,7 @@ import { User } from 'src/entities';
 @Module({
   imports: [MikroOrmModule.forFeature([User])],
   controllers: [],
-  providers: [AWSService, UsersService],
+  providers: [AWSService],
   exports: [AWSService],
 })
 export class AWSModule {}

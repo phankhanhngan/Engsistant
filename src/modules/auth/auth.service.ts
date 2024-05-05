@@ -64,11 +64,9 @@ export class AuthService {
   async googleLogin(firebaseUser: UserFirebase): Promise<string> {
     try {
       // Check if user exists
-      const userDb = await this.userService.getUserByGoogleId(
-        firebaseUser.userId,
-      );
-
+      const userDb = await this.userService.getUserByEmail(firebaseUser.email);
       let userRtn: UserRtnDto;
+
       if (userDb == null) {
         // Insert user to db
         const user = new User();
@@ -82,6 +80,10 @@ export class AuthService {
         this.userRepository.persist(user).flush();
         userRtn = plainToInstance(UserRtnDto, user);
       } else {
+        if (userDb.authId == null) {
+          userDb.authId = firebaseUser.userId;
+          this.userRepository.persist(userDb).flush();
+        }
         // Generate token
         userRtn = plainToInstance(UserRtnDto, userDb);
       }
