@@ -63,7 +63,6 @@ import { GoogleClassroomModule } from './modules/google_classroom/google-classro
     }),
     AuthModule,
     UsersModule,
-    AWSModule,
     GoogleClassroomModule,
   ],
 

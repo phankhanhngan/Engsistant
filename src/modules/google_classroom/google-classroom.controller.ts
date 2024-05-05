@@ -5,8 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
-  Param,
-  ParseIntPipe,
   Post,
   Req,
   Res,
@@ -15,15 +13,18 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { Logger } from 'winston';
 import { Response } from 'express';
 import { GoogleClassroomService } from './google-classroom.service';
-import { AuthorizeDto } from './dtos/Authorize.dto';
 import { ApiResponse } from '@nestjs/swagger';
+import { ApiResponseStatus } from 'src/common/enum/common.enum';
+import { AuthorizeTypeDto } from './swagger_types/Authorize.dto';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { ListClassDTO } from './swagger_types/ListClass.dto';
+import { ImportClassDto } from './dtos/ImportClass.dto';
 
 @Controller('classes')
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 // Userole guard
 export class GoogleClassroomController {
   constructor(
@@ -32,39 +33,108 @@ export class GoogleClassroomController {
   ) {}
 
   @Post('/authorize')
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe({ transform: true }))
-  async authorize(
-    @Req() req,
-    @Res() res: Response,
-    // @Body() body: AuthorizeDto,
-  ) {
+  @ApiResponse({
+    status: 200,
+    type: AuthorizeTypeDto,
+    description: `Get the authorize url that redirects to Google classroom authorization page.`,
+  })
+  async authorize(@Req() req, @Res() res: Response) {
     try {
-      await this.googleClassroomService.authorize();
-      res.status(200).json({ message: 'Authorized' });
+      const authorizeUrl = await this.googleClassroomService.authorize();
+      res.status(200).json({
+        message: 'Get the authorization URL successfully',
+        status: ApiResponseStatus.SUCCESS,
+        authorizeUrl: authorizeUrl,
+      });
     } catch (error) {
       this.logger.error(
         'Calling authorize()',
         error,
         GoogleClassroomController.name,
       );
-      throw error;
+      res.status(500).json({
+        message: error.message,
+        status: ApiResponseStatus.FAILURE,
+      });
     }
   }
 
-  @Get('/list')
+  @Get('/list-all')
+  @UseGuards(JwtAuthGuard)
+  @ApiResponse({
+    status: 200,
+    type: ListClassDTO,
+    description: `List all classes of current user. If the user has not authorized, it will return an empty array`,
+  })
   async listClassroom(@Req() req, @Res() res: Response) {
     try {
-      const classrooms = await this.googleClassroomService.fetchClassroomData();
-      res.json({ received: true });
+      const user = req.user;
+      const classrooms = await this.googleClassroomService.fetchClassroomData(
+        user,
+      );
+      res.status(200).json({
+        message: 'List all classes successfully',
+        status: ApiResponseStatus.SUCCESS,
+        classes: classrooms,
+      });
     } catch (error) {
       this.logger.error(
         'Calling listClassroom()',
         error,
         GoogleClassroomController.name,
       );
-      throw error;
+      res.status(500).json({
+        message: error.message,
+        status: ApiResponseStatus.FAILURE,
+      });
+    }
+  }
+
+  @Post('/import')
+  @UseGuards(JwtAuthGuard)
+  @ApiResponse({
+    status: 200,
+    type: ListClassDTO,
+    description: `List all classes of current user. If the user has not authorized, it will return an empty array`,
+  })
+  async importClassroom(
+    @Req() req,
+    @Res() res: Response,
+    @Body() importClassDto: ImportClassDto,
+  ) {
+    try {
+      const user = req.user;
+      // Import the class
+
+      const success = await this.googleClassroomService.importClassroomData(
+        user,
+        importClassDto.classes,
+      );
+
+      if (success) {
+        res.status(200).json({
+          message: 'Import classes successfully',
+          status: ApiResponseStatus.SUCCESS,
+        });
+      } else {
+        res.status(400).json({
+          message: 'Import classes failed',
+          status: ApiResponseStatus.FAILURE,
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        'Calling listClassroom()',
+        error,
+        GoogleClassroomController.name,
+      );
+      res.status(500).json({
+        message: error.message,
+        status: ApiResponseStatus.FAILURE,
+      });
     }
   }
 }

@@ -59,7 +59,10 @@ export class AuthController {
       });
     } catch (error) {
       this.logger.error('Calling login()', error, AuthController.name);
-      throw error;
+      res.status(500).json({
+        message: error.message,
+        status: ApiResponseStatus.FAILURE,
+      });
     }
   }
 
@@ -108,7 +111,10 @@ export class AuthController {
       });
     } catch (error) {
       this.logger.error('Calling registerRole()', error, AuthController.name);
-      throw error;
+      res.status(500).json({
+        message: error.message,
+        status: ApiResponseStatus.FAILURE,
+      });
     }
   }
 }

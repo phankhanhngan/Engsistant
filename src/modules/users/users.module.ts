@@ -3,13 +3,12 @@ import { UsersController } from './users.controller';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { User } from 'src/entities';
 import { UsersService } from './users.service';
-import { AWSModule } from '../aws/aws.module';
-import { AWSService } from '../aws/aws.service';
-import { AuthModule } from '../auth/auth.module';
+import { GoogleClassroomModule } from '../google_classroom/google-classroom.module';
 
 @Module({
-  imports: [AuthModule, AWSModule, MikroOrmModule.forFeature([User])],
+  imports: [MikroOrmModule.forFeature([User]), GoogleClassroomModule],
   controllers: [UsersController],
-  providers: [UsersService, AWSService],
+  providers: [UsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}

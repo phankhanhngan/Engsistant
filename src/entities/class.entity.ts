@@ -11,7 +11,20 @@ export class Class extends BaseUUID {
   @Property({ nullable: true })
   description?: string;
 
+  @Unique()
+  @Property({ nullable: true })
+  descriptionHeading?: string;
+
+  @Unique()
+  @Property({ nullable: true })
+  alternativeLink?: string;
+
+  @Unique()
+  @Property({ nullable: true })
+  driveLink?: string;
+
   @Property({ nullable: false })
+  @Unique()
   googleCourseId!: string;
 
   @ManyToOne({
