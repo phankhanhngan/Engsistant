@@ -1,10 +1,16 @@
+import { InjectRepository } from '@mikro-orm/nestjs';
 import { UsersService } from '../../modules/users/users.service';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { CanActivate, ExecutionContext, Inject, mixin } from '@nestjs/common';
+import { EntityRepository } from '@mikro-orm/core';
+import { User } from 'src/entities';
 
 export const RoleAuthGuard = (acceptedRoles: Array<string>) => {
   class RoleAuthGuardMixin implements CanActivate {
-    constructor(@Inject(UsersService) readonly userService: UsersService) {}
+    constructor(
+      @InjectRepository(User)
+      readonly userRepository: EntityRepository<User>,
+    ) {}
     async canActivate(context: ExecutionContext): Promise<boolean> {
       const req = context.switchToHttp().getRequest();
       const user = req.user;
