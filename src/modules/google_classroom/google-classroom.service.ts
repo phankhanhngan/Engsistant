@@ -104,6 +104,7 @@ export class GoogleClassroomService {
       });
       const response = await classroom.courses.list({
         pageSize: 100,
+        teacherId: 'me',
       });
       return response.data.courses.map((course) => {
         return {
