@@ -21,6 +21,7 @@ import { PreauthMiddleware } from './modules/auth/preauth.middleware';
 import { GoogleClassroomModule } from './modules/google_classroom/google-classroom.module';
 import { TeacherModule } from './modules/teacher/teacher.module';
 import { StudentModule } from './modules/student/student.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { StudentModule } from './modules/student/student.module';
     GoogleClassroomModule,
     TeacherModule,
     StudentModule,
+    AdminModule,
   ],
 
   controllers: [AppController],

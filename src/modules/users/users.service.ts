@@ -6,6 +6,7 @@ import { User } from 'src/entities';
 import * as bcrypt from 'bcrypt';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { GoogleClassroomService } from '../google_classroom/google-classroom.service';
+import { UpdateUserDto } from '../admin/dtos/UpdateUser.dto';
 
 @Injectable()
 export class UsersService {
@@ -84,6 +85,36 @@ export class UsersService {
       return true;
     } catch (error) {
       this.logger.error('Calling setGoogleToken()', error, UsersService.name);
+      throw error;
+    }
+  }
+
+  async updateUser(id: string, updateDto: UpdateUserDto): Promise<User> {
+    try {
+      const user = await this.getUserById(id);
+      if (!user)
+        throw new NotFoundException(`Can not find user with id: ${id}`);
+
+      if (updateDto.role) user.role = updateDto.role;
+      if (updateDto.googleRefreshToken)
+        user.googleRefreshToken = updateDto.googleRefreshToken;
+      if (updateDto.name) user.name = updateDto.name;
+      if (updateDto.authId) user.authId = updateDto.authId;
+      await this.userRepository.persistAndFlush(user);
+
+      return user;
+    } catch (error) {
+      this.logger.error('Calling updateUser()', error, UsersService.name);
+      throw error;
+    }
+  }
+
+  async listUsers(): Promise<User[]> {
+    try {
+      const users = await this.userRepository.findAll();
+      return users;
+    } catch (error) {
+      this.logger.error('Calling listUsers()', error, UsersService.name);
       throw error;
     }
   }

@@ -63,7 +63,7 @@ export class GoogleClassroomController {
         GoogleClassroomController.name,
       );
       res.status(500).json({
-        message: error.message,
+        message: `authorize failed due to error=${error.message} ${error.stack}`,
         status: ApiResponseStatus.FAILURE,
       });
     }
@@ -94,7 +94,7 @@ export class GoogleClassroomController {
         GoogleClassroomController.name,
       );
       res.status(500).json({
-        message: error.message,
+        message: `listClassroom failed due to error=${error.message} ${error.stack}`,
         status: ApiResponseStatus.FAILURE,
       });
     }
@@ -139,7 +139,7 @@ export class GoogleClassroomController {
         GoogleClassroomController.name,
       );
       res.status(500).json({
-        message: error.message,
+        message: `Import classes failed due to error=${error.message} ${error.stack}`,
         status: ApiResponseStatus.FAILURE,
       });
     }

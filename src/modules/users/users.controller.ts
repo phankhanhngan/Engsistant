@@ -93,7 +93,10 @@ export class UsersController {
         error,
         UsersController.name,
       );
-      throw error;
+      res.status(500).json({
+        message: `Set Google token failed due to error=${error.message}`,
+        status: ApiResponseStatus.FAILURE,
+      });
     }
   }
 }

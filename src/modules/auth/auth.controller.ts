@@ -60,7 +60,7 @@ export class AuthController {
     } catch (error) {
       this.logger.error('Calling login()', error, AuthController.name);
       res.status(500).json({
-        message: error.message,
+        message: `Login failed due to error=${error.message} ${error.stack}`,
         status: ApiResponseStatus.FAILURE,
       });
     }
