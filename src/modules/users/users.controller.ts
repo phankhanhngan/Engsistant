@@ -23,6 +23,8 @@ import { plainToInstance } from 'class-transformer';
 import { AuthorizeTypeDto } from '../google_classroom/swagger_types/Authorize.dto';
 import { SetGoogleTokenDto } from './dtos/SetGoogleToken.dto';
 import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
+import { Class } from 'src/entities/class.entity';
+import { ClassRtnDto } from './dtos/ClassRtn.dto';
 
 @UseGuards(JwtAuthGuard)
 @ApiTags('users')

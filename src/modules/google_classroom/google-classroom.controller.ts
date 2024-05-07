@@ -115,7 +115,6 @@ export class GoogleClassroomController {
     try {
       const user = req.user;
       // Import the class
-
       const success = await this.googleClassroomService.importClassroomData(
         user,
         importClassDto.classes,

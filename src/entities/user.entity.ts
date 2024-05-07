@@ -1,4 +1,11 @@
-import { Entity, Enum, ManyToMany, Property, Unique } from '@mikro-orm/core';
+import {
+  Collection,
+  Entity,
+  Enum,
+  ManyToMany,
+  Property,
+  Unique,
+} from '@mikro-orm/core';
 import { IsEmail } from 'class-validator';
 import { Role } from '../common/enum/common.enum';
 import { BaseUUID } from './baseUUID.enity';
@@ -28,6 +35,6 @@ export class User extends BaseUUID {
   @Property({ nullable: true })
   googleRefreshToken?: string;
 
-  @ManyToMany({ entity: () => Class })
-  classes: Class[];
+  @ManyToMany(() => Class)
+  classes: Collection<Class>;
 }

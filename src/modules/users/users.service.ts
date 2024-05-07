@@ -7,6 +7,10 @@ import * as bcrypt from 'bcrypt';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { GoogleClassroomService } from '../google_classroom/google-classroom.service';
 import { UpdateUserDto } from '../admin/dtos/UpdateUser.dto';
+import { plainToClass } from 'class-transformer';
+import { UserRtnDto } from '../auth/dtos/UserRtnDto.dto';
+import { Class } from 'src/entities/class.entity';
+import { ClassRtnDto } from './dtos/ClassRtn.dto';
 
 @Injectable()
 export class UsersService {
@@ -14,6 +18,8 @@ export class UsersService {
     private readonly em: EntityManager,
     @InjectRepository(User)
     private readonly userRepository: EntityRepository<User>,
+    @InjectRepository(Class)
+    private readonly classRepository: EntityRepository<Class>,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
     private readonly googleService: GoogleClassroomService,
   ) {}
@@ -79,6 +85,8 @@ export class UsersService {
       // Get the access token
       const { tokens } = await this.googleService.getToken(code);
       const refreshToken = tokens.refresh_token;
+      if (!refreshToken) return false;
+
       // Save the refresh token
       user.googleRefreshToken = refreshToken;
       await this.userRepository.persistAndFlush(user);
@@ -89,7 +97,7 @@ export class UsersService {
     }
   }
 
-  async updateUser(id: string, updateDto: UpdateUserDto): Promise<User> {
+  async updateUser(id: string, updateDto: UpdateUserDto): Promise<UserRtnDto> {
     try {
       const user = await this.getUserById(id);
       if (!user)
@@ -102,19 +110,46 @@ export class UsersService {
       if (updateDto.authId) user.authId = updateDto.authId;
       await this.userRepository.persistAndFlush(user);
 
-      return user;
+      return plainToClass(UserRtnDto, user);
     } catch (error) {
       this.logger.error('Calling updateUser()', error, UsersService.name);
       throw error;
     }
   }
 
-  async listUsers(): Promise<User[]> {
+  async listUsers(): Promise<UserRtnDto[]> {
     try {
       const users = await this.userRepository.findAll();
-      return users;
+      return users.map((user) => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        photo: user.photo,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        googleId: user.authId,
+      }));
     } catch (error) {
       this.logger.error('Calling listUsers()', error, UsersService.name);
+      throw error;
+    }
+  }
+
+  async listClasses(user: User): Promise<ClassRtnDto[]> {
+    try {
+      const classes = await user.classes.loadItems();
+      return classes.map((cls) => ({
+        id: cls.id,
+        name: cls.name,
+        description: cls.description,
+        descriptionHeading: cls.descriptionHeading,
+        alternativeLink: cls.alternativeLink,
+        driveLink: cls.driveLink,
+        googleCourseId: cls.googleCourseId,
+      }));
+    } catch (error) {
+      this.logger.error('Calling listClasses()', error, UsersService.name);
       throw error;
     }
   }

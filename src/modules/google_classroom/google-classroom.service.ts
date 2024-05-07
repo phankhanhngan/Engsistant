@@ -7,8 +7,10 @@ import { User } from 'src/entities';
 import { GoogleClassroomInfoDto } from './dtos/GoogleClassroomInfo.dto';
 import { ImportClassInfoDto } from './dtos/ImportClass.dto';
 import { Class } from 'src/entities/class.entity';
-import { EntityRepository } from '@mikro-orm/core';
+import { EntityRepository, Loaded } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
+import { Role } from 'src/common/enum/common.enum';
+import e from 'express';
 
 @Injectable()
 export class GoogleClassroomService {
@@ -44,6 +46,7 @@ export class GoogleClassroomService {
         'https://www.googleapis.com/auth/classroom.addons.teacher',
         'https://www.googleapis.com/auth/classroom.profile.emails',
         'https://www.googleapis.com/auth/classroom.profile.photos',
+        'https://www.googleapis.com/auth/classroom.rosters',
       ];
 
       // Generate a secure random state value.
@@ -138,11 +141,13 @@ export class GoogleClassroomService {
         owner: user,
       });
 
+      // TODO: add transaction
+
       // Excluded the class that has been imported
       classesInfo = classesInfo.filter((classInfo) => {
-        return existingClasses.find((existingClass) => {
-          return existingClass.googleCourseId === classInfo.id;
-        });
+        return !existingClasses
+          .map((c) => c.googleCourseId)
+          .includes(classInfo.id);
       });
 
       // Build class entity
@@ -159,63 +164,68 @@ export class GoogleClassroomService {
         this.classRepository.persist(entity);
       });
 
-      // // Import student
-      // await this.oAuth2Client.setCredentials({
-      //   refresh_token: user.googleRefreshToken,
-      // });
+      // Import student
+      await this.oAuth2Client.setCredentials({
+        refresh_token: user.googleRefreshToken,
+      });
 
-      // // fetch student
-      // const classroom = google.classroom({
-      //   version: 'v1',
-      //   auth: this.oAuth2Client,
-      // });
+      // fetch student
+      const classroom = google.classroom({
+        version: 'v1',
+        auth: this.oAuth2Client,
+      });
 
-      // const studentsResponse = await Promise.all(
-      //   classesInfo.map((classInfo) => {
-      //     return classroom.courses.students.list({
-      //       courseId: classInfo.id,
-      //     });
-      //   }),
-      // );
+      const studentsResponse = await Promise.all(
+        classesInfo.map((classInfo) => {
+          return classroom.courses.students.list({
+            courseId: classInfo.id,
+          });
+        }),
+      );
 
-      // const studentInfo = studentsResponse.flatMap((studentResponse) => {
-      //   return studentResponse.data.students.map((student) => {
-      //     return {
-      //       email: student.profile.emailAddress,
-      //       courseId: student.courseId,
-      //     };
-      //   });
-      // });
+      const studentInfo = studentsResponse.flatMap((studentResponse) => {
+        return studentResponse.data.students.map((student) => {
+          return {
+            email: student.profile.emailAddress,
+            courseId: student.courseId,
+            name: student.profile.name.fullName,
+          };
+        });
+      });
 
-      // await Promise.all(
-      //   studentInfo.map(async (student) => {
-      //     // check if the student is already in the database
-      //     let existingUser = await this.userRepository.findOne({
-      //       email: student.email,
-      //     });
+      await Promise.all(
+        studentInfo.map(async (student) => {
+          // check if the student is already in the database
+          const existingUser = await this.userRepository.findOne(
+            {
+              email: student.email,
+            },
+            { populate: ['classes'] },
+          );
+          const classes = await existingUser.classes.loadItems();
 
-      //     if (existingUser == null) {
-      //       existingUser = new User();
-      //       existingUser.id = randomUUID();
-      //       existingUser.email = student.email;
-      //       existingUser.role = Role.STUDENT;
-      //       this.userRepository.persist(existingUser);
-      //     }
+          if (existingUser == null) {
+            existingUser.id = randomUUID();
+            existingUser.email = student.email;
+            existingUser.role = Role.STUDENT;
+            existingUser.name = student.name;
+            this.userRepository.persist(existingUser);
+          }
 
-      //     // Check if the student is already in the class
-      //     const existingClass = await this.classRepository.findOne({
-      //       googleCourseId: student.courseId,
-      //     });
+          // Check if the student is already in the class
+          const existingClass = await this.classRepository.findOne({
+            googleCourseId: student.courseId,
+          });
 
-      //     if (existingClass == null) {
-      //       existingUser.classes.push(existingClass);
-      //     }
-      //   }),
-      // );
+          if (!classes.includes(existingClass)) {
+            existingUser.classes.add(existingClass);
+          }
+        }),
+      );
 
       // Import the classroom data
       await this.classRepository.flush();
-      // await this.userRepository.flush();
+      await this.userRepository.flush();
       return true;
     } catch (err) {
       this.logger.error(

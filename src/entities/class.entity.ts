@@ -1,4 +1,11 @@
-import { Entity, ManyToOne, Property, Unique } from '@mikro-orm/core';
+import {
+  Collection,
+  Entity,
+  ManyToMany,
+  ManyToOne,
+  Property,
+  Unique,
+} from '@mikro-orm/core';
 import { BaseUUID } from './baseUUID.enity';
 import { User } from './user.entity';
 

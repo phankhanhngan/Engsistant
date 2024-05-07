@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Inject,
   Logger,
   Post,
@@ -15,7 +16,7 @@ import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 import { UpdateUserDto } from './dtos/UpdateUser.dto';
 import { UsersService } from '../users/users.service';
 
-@Controller('Admin')
+@Controller('admin')
 @UseGuards(JwtAuthGuard)
 export class AdminController {
   constructor(
@@ -48,7 +49,7 @@ export class AdminController {
   }
 
   // List
-  @Post('/users')
+  @Get('/users')
   @UseGuards(RoleAuthGuard([Role.ADMIN]))
   async listUsers() {
     try {
