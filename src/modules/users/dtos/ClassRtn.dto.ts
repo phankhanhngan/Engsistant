@@ -20,4 +20,6 @@ export class ClassRtnDto {
   color?: string;
   @ApiProperty()
   students?: User[];
+  @ApiProperty()
+  cover: string;
 }

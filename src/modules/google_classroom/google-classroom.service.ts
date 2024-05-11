@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { google } from 'googleapis';
-import { randomUUID } from 'crypto';
+import { randomInt, randomUUID } from 'crypto';
 import { User } from 'src/entities';
 import { GoogleClassroomInfoDto } from './dtos/GoogleClassroomInfo.dto';
 import { ImportClassInfoDto } from './dtos/ImportClass.dto';
@@ -13,6 +13,7 @@ import { Role } from 'src/common/enum/common.enum';
 import e from 'express';
 import { generatePastelColor } from 'src/common/utils/utils';
 import { MailerService } from '@nest-modules/mailer';
+import axios from 'axios';
 
 @Injectable()
 export class GoogleClassroomService {
@@ -157,19 +158,22 @@ export class GoogleClassroomService {
       });
 
       // Build class entity
-      classesInfo?.map((classInfo) => {
-        const entity = new Class();
-        entity.id = randomUUID();
-        entity.name = classInfo.name;
-        entity.description = classInfo.description;
-        entity.descriptionHeading = classInfo.descriptionHeading;
-        entity.alternativeLink = classInfo.alternativeLink;
-        entity.driveLink = classInfo.driveLink;
-        entity.googleCourseId = classInfo.id;
-        entity.owner = user;
-        entity.color = generatePastelColor();
-        this.classRepository.persist(entity);
-      });
+      await Promise.all(
+        classesInfo?.map(async (classInfo) => {
+          const entity = new Class();
+          entity.id = randomUUID();
+          entity.name = classInfo.name;
+          entity.description = classInfo.description;
+          entity.descriptionHeading = classInfo.descriptionHeading;
+          entity.alternativeLink = classInfo.alternativeLink;
+          entity.driveLink = classInfo.driveLink;
+          entity.googleCourseId = classInfo.id;
+          entity.owner = user;
+          entity.color = generatePastelColor();
+          entity.cover = await this.generateCoverImage();
+          this.classRepository.persist(entity);
+        }),
+      );
 
       // Import student
       await this.oAuth2Client.setCredentials({
@@ -238,18 +242,67 @@ export class GoogleClassroomService {
 
       // send invitation mail to each student
       studentInfos?.map(async (student) => {
-        // send invitation mail to student
-        // const mail = new Mail();
-        // mail.to = student.email;
-        // mail.subject = 'Invitation to join class';
-        // mail.body = `You have been invited to join the class ${classInfo.name}`;
-        // await this.mailService.sendMail(mail);
+        const className =
+          classesInfo?.find((c) => c.id == student.courseId)?.name ?? 'N/A';
+        await this.mailerService
+          .sendMail({
+            to: student.email,
+            subject: 'Invitation to join class',
+            template: 'invite_student',
+            context: {
+              studentName: student.name,
+              teacherName: user.name,
+              joinLink: process.env.CLIENT_URL + 'login',
+              className: className,
+            },
+          })
+          .then(() => {
+            this.logger.info(
+              `Sent invitation mail to ${student.email} for class ${className}`,
+            );
+          });
       });
 
       return true;
     } catch (err) {
       this.logger.error(
         'Calling importClassroomData()',
+        err,
+        GoogleClassroomService.name,
+      );
+      throw err;
+    }
+  }
+
+  async generateCoverImage(): Promise<string> {
+    try {
+      // Generate a cover image for the class
+
+      // Call to pexels
+      const pexels = axios.create({
+        baseURL: 'https://api.pexels.com/v1',
+        headers: {
+          Authorization: process.env.PEXELS_API_KEY,
+        },
+      });
+
+      const page = randomInt(1, 10);
+      const perPage = 10;
+
+      const response = await pexels.get(
+        `/search?query=zoom%20office%20backgrounds&page=${page}&per_page=${perPage}`,
+      );
+
+      const photos = response.data?.photos;
+      const length = photos?.length ?? 0;
+      const randomPhoto = photos
+        ? photos[Math.floor(Math.random() * length)]?.src?.original
+        : 'https://images.pexels.com/photos/8960464/pexels-photo-8960464.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
+      console.log(randomPhoto);
+      return randomPhoto;
+    } catch (err) {
+      this.logger.error(
+        'Calling generateCoverImage()',
         err,
         GoogleClassroomService.name,
       );

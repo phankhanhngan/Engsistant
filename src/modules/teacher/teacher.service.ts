@@ -39,6 +39,7 @@ export class TeacherService {
           classRtnDto.color = c.color;
           classRtnDto.driveLink = c.driveLink;
           classRtnDto.googleCourseId = c.googleCourseId;
+          classRtnDto.cover = c.cover;
           return classRtnDto;
         }) ?? [];
 

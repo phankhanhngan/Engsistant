@@ -25,7 +25,8 @@ export class StudentController {
 
   @ApiResponse({
     status: 200,
-    type: Array<ClassRtnDto>,
+    type: ClassRtnDto,
+    description: `List all classes of student.`,
   })
   @Get('/my-classes')
   @UseGuards(RoleAuthGuard([Role.STUDENT]))

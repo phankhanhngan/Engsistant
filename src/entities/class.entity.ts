@@ -36,4 +36,7 @@ export class Class extends BaseUUID {
 
   @Property({ nullable: false })
   color!: string;
+
+  @Property({ nullable: false })
+  cover!: string;
 }

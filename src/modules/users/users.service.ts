@@ -151,6 +151,7 @@ export class UsersService {
           driveLink: cls.driveLink,
           googleCourseId: cls.googleCourseId,
           color: cls.color,
+          cover: cls.cover,
         })) ?? []
       );
     } catch (error) {

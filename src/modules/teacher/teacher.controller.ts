@@ -33,7 +33,7 @@ export class TeacherController {
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiResponse({
     status: 200,
-    type: Array<ClassRtnDto>,
+    type: ClassRtnDto,
     description: `List all imported classes of teacher.`,
   })
   @UseGuards(RoleAuthGuard([Role.TEACHER]))
