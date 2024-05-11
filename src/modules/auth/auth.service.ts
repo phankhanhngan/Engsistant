@@ -1,32 +1,16 @@
 import { EntityManager, EntityRepository } from '@mikro-orm/mysql';
-import {
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nest-modules/mailer';
-import { LoginDto } from './dtos/LoginDto.dto';
-import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { plainToInstance } from 'class-transformer';
-import { RegisterDto } from './dtos/RegisterDto.dto';
 import { UsersService } from '../users/users.service';
 import { UserRtnDto } from './dtos/UserRtnDto.dto';
-import { EmailDto } from './dtos/EmailDto.dto';
-import { CheckCodeDto } from './dtos/CheckCodeDto.dto';
-import { ResetPasswordDto } from './dtos/ResetPasswordDto.dto';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { User } from 'src/entities';
-import { IUserAuthen, IUserAuthenV2 } from './interfaces/auth-user.interface';
-import { UpdateUserDTO } from '../users/dtos/update-user.dto';
 import { UserFirebase } from './dtos/UserFirebase.dto';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { randomUUID } from 'crypto';
 import { Role } from 'src/common/enum/common.enum';
-import { JWT_EXPIRATION_DAYS } from 'src/common/constants/common';
-import { use } from 'passport';
 import { RegisterRole } from './dtos/RegisterRole.dto';
 @Injectable()
 export class AuthService {
@@ -57,6 +41,7 @@ export class AuthService {
         },
       });
     } catch (error) {
+      this.logger.error('Calling sendMail()', error, AuthService.name);
       throw error;
     }
   }

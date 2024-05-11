@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { User } from 'src/entities';
 
 export class ClassRtnDto {
   @ApiProperty()
@@ -6,13 +7,17 @@ export class ClassRtnDto {
   @ApiProperty()
   name: string;
   @ApiProperty()
-  description: string;
+  description?: string;
   @ApiProperty()
-  descriptionHeading: string;
+  descriptionHeading?: string;
   @ApiProperty()
-  alternativeLink: string;
+  alternativeLink?: string;
   @ApiProperty()
-  driveLink: string;
+  driveLink?: string;
   @ApiProperty()
-  googleCourseId: string;
+  googleCourseId?: string;
+  @ApiProperty()
+  color?: string;
+  @ApiProperty()
+  students?: User[];
 }

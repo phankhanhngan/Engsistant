@@ -120,16 +120,18 @@ export class UsersService {
   async listUsers(): Promise<UserRtnDto[]> {
     try {
       const users = await this.userRepository.findAll();
-      return users.map((user) => ({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        photo: user.photo,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        googleId: user.authId,
-      }));
+      return (
+        users?.map((user) => ({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          photo: user.photo,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          googleId: user.authId,
+        })) ?? []
+      );
     } catch (error) {
       this.logger.error('Calling listUsers()', error, UsersService.name);
       throw error;
@@ -139,15 +141,18 @@ export class UsersService {
   async listClasses(user: User): Promise<ClassRtnDto[]> {
     try {
       const classes = await user.classes.loadItems();
-      return classes.map((cls) => ({
-        id: cls.id,
-        name: cls.name,
-        description: cls.description,
-        descriptionHeading: cls.descriptionHeading,
-        alternativeLink: cls.alternativeLink,
-        driveLink: cls.driveLink,
-        googleCourseId: cls.googleCourseId,
-      }));
+      return (
+        classes?.map((cls) => ({
+          id: cls.id,
+          name: cls.name,
+          description: cls.description,
+          descriptionHeading: cls.descriptionHeading,
+          alternativeLink: cls.alternativeLink,
+          driveLink: cls.driveLink,
+          googleCourseId: cls.googleCourseId,
+          color: cls.color,
+        })) ?? []
+      );
     } catch (error) {
       this.logger.error('Calling listClasses()', error, UsersService.name);
       throw error;

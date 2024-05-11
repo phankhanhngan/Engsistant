@@ -7,10 +7,12 @@ import { User } from 'src/entities';
 import { GoogleClassroomInfoDto } from './dtos/GoogleClassroomInfo.dto';
 import { ImportClassInfoDto } from './dtos/ImportClass.dto';
 import { Class } from 'src/entities/class.entity';
-import { EntityRepository, Loaded } from '@mikro-orm/core';
+import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Role } from 'src/common/enum/common.enum';
 import e from 'express';
+import { generatePastelColor } from 'src/common/utils/utils';
+import { MailerService } from '@nest-modules/mailer';
 
 @Injectable()
 export class GoogleClassroomService {
@@ -21,6 +23,7 @@ export class GoogleClassroomService {
     private readonly classRepository: EntityRepository<Class>,
     @InjectRepository(User)
     private readonly userRepository: EntityRepository<User>,
+    private readonly mailerService: MailerService,
   ) {
     this.oAuth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
@@ -63,6 +66,7 @@ export class GoogleClassroomService {
         include_granted_scopes: true,
         // Include the state parameter to reduce the risk of CSRF attacks.
         // state: state,
+        prompt: 'select_account',
       });
       return authorizationUrl;
     } catch (err) {
@@ -109,18 +113,20 @@ export class GoogleClassroomService {
         pageSize: 100,
         teacherId: 'me',
       });
-      return response.data.courses.map((course) => {
-        return {
-          name: course.name,
-          id: course.id,
-          descriptionHeading: course.descriptionHeading,
-          description: course.description,
-          alternateLink: course.alternateLink,
-          driveLink: course.teacherFolder
-            ? course.teacherFolder.alternateLink
-            : 'N/A',
-        };
-      });
+      return (
+        response.data?.courses?.map((course) => {
+          return {
+            name: course.name,
+            id: course.id,
+            descriptionHeading: course.descriptionHeading,
+            description: course.description,
+            alternateLink: course.alternateLink,
+            driveLink: course.teacherFolder
+              ? course.teacherFolder.alternateLink
+              : 'N/A',
+          };
+        }) ?? []
+      );
     } catch (err) {
       this.logger.error(
         'Calling fetchClassroomData()',
@@ -144,14 +150,14 @@ export class GoogleClassroomService {
       // TODO: add transaction
 
       // Excluded the class that has been imported
-      classesInfo = classesInfo.filter((classInfo) => {
+      classesInfo = classesInfo?.filter((classInfo) => {
         return !existingClasses
-          .map((c) => c.googleCourseId)
-          .includes(classInfo.id);
+          ?.map((c) => c.googleCourseId)
+          ?.includes(classInfo.id);
       });
 
       // Build class entity
-      classesInfo.map((classInfo) => {
+      classesInfo?.map((classInfo) => {
         const entity = new Class();
         entity.id = randomUUID();
         entity.name = classInfo.name;
@@ -161,6 +167,7 @@ export class GoogleClassroomService {
         entity.driveLink = classInfo.driveLink;
         entity.googleCourseId = classInfo.id;
         entity.owner = user;
+        entity.color = generatePastelColor();
         this.classRepository.persist(entity);
       });
 
@@ -176,25 +183,27 @@ export class GoogleClassroomService {
       });
 
       const studentsResponse = await Promise.all(
-        classesInfo.map((classInfo) => {
+        classesInfo?.map((classInfo) => {
           return classroom.courses.students.list({
             courseId: classInfo.id,
           });
         }),
       );
 
-      const studentInfo = studentsResponse.flatMap((studentResponse) => {
-        return studentResponse.data.students.map((student) => {
-          return {
-            email: student.profile.emailAddress,
-            courseId: student.courseId,
-            name: student.profile.name.fullName,
-          };
-        });
+      const studentInfos = studentsResponse?.flatMap((studentResponse) => {
+        return (
+          studentResponse.data?.students?.map((student) => {
+            return {
+              email: student.profile.emailAddress,
+              courseId: student.courseId,
+              name: student.profile.name.fullName,
+            };
+          }) ?? []
+        );
       });
 
       await Promise.all(
-        studentInfo.map(async (student) => {
+        studentInfos?.map(async (student) => {
           // check if the student is already in the database
           const existingUser = await this.userRepository.findOne(
             {
@@ -226,6 +235,17 @@ export class GoogleClassroomService {
       // Import the classroom data
       await this.classRepository.flush();
       await this.userRepository.flush();
+
+      // send invitation mail to each student
+      studentInfos?.map(async (student) => {
+        // send invitation mail to student
+        // const mail = new Mail();
+        // mail.to = student.email;
+        // mail.subject = 'Invitation to join class';
+        // mail.body = `You have been invited to join the class ${classInfo.name}`;
+        // await this.mailService.sendMail(mail);
+      });
+
       return true;
     } catch (err) {
       this.logger.error(

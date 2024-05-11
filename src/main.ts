@@ -20,10 +20,10 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  const corsOrigin =
-    configService.get<string>('LOCAL_MODE') === 'true'
-      ? '*'
-      : configService.get<string>('CLIENT_URL');
+  const corsOrigin = '*';
+  // configService.get<string>('LOCAL_MODE') === 'true'
+  // ? '*'
+  // : configService.get<string>('CLIENT_URL');
 
   app.enableCors({
     origin: corsOrigin,

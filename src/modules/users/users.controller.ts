@@ -76,6 +76,7 @@ export class UsersController {
     try {
       const user = req.user;
       const code = setTokenDto.code;
+      console.log(code);
       const isSucess = await this.usersService.setGoogleToken(user, code);
 
       if (isSucess) {
