@@ -252,7 +252,7 @@ export class GoogleClassroomService {
             context: {
               studentName: student.name,
               teacherName: user.name,
-              joinLink: process.env.CLIENT_URL + 'login',
+              joinLink: process.env.CLIENT_URL + '/login',
               className: className,
             },
           })
