@@ -7,19 +7,15 @@ export class Class extends BaseUUID {
   @Property({ nullable: false })
   name!: string;
 
-  @Unique()
   @Property({ nullable: true })
   description?: string;
 
-  @Unique()
   @Property({ nullable: true })
   descriptionHeading?: string;
 
-  @Unique()
   @Property({ nullable: true })
   alternativeLink?: string;
 
-  @Unique()
   @Property({ nullable: true })
   driveLink?: string;
 
