@@ -1,10 +1,12 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Inject,
   Logger,
+  Param,
   Post,
   Req,
   Res,
@@ -19,12 +21,29 @@ import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 import { TeacherService } from './teacher.service';
 import { ApiResponse } from '@nestjs/swagger';
 import { ClassRtnDto } from '../users/dtos/ClassRtn.dto';
+import { GptService } from '../gpt/gpt.service';
+import { ListWordsDto } from './dtos/ListWord.dto';
+import { LessonService } from '../lesson/lesson.service';
+import { CEFR } from 'src/common/constants/cefr-level';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { Class } from 'src/entities/class.entity';
+import { EntityRepository } from '@mikro-orm/core';
+import {
+  BuildLessonResponseDto,
+  GetLessonResponse,
+  LessonRecommendSwaggerDto,
+  ListLessonResponse,
+} from 'src/common/swagger_types/swagger-type.dto';
 
 @Controller('teacher')
 @UseGuards(JwtAuthGuard)
 export class TeacherController {
   constructor(
     private readonly teacherService: TeacherService,
+    private readonly lessonService: LessonService,
+    private readonly gptService: GptService,
+    @InjectRepository(Class)
+    private readonly classRepository: EntityRepository<Class>,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
@@ -55,5 +74,155 @@ export class TeacherController {
     }
   }
 
-  // list students
+  // Get highlighted words from paragraph
+  @Post('/lessons/recommend')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: LessonRecommendSwaggerDto,
+    description: `List all words from GPT and grammars by sentences that are equals or 1 level higher than inputted level.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
+  async listGptWordsFromParagraph(
+    @Req() req,
+    @Res() res,
+    @Body() body: ListWordsDto,
+  ) {
+    try {
+      const { paragraph, level } = body;
+      const sentences = paragraph.match(/[^\.!\?]+[\.!\?]+/g);
+      const vocabularies = await this.gptService.getHighlightedWords(
+        paragraph,
+        level,
+      );
+      const grammars = await this.gptService.getGrammarsFromSentences(
+        sentences,
+        level,
+      );
+      res.status(200).json({
+        message: 'List all highlighted words successfully',
+        status: ApiResponseStatus.SUCCESS,
+        vocabularies: vocabularies,
+        grammars: grammars,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Calling listWordsFromParagraph()',
+        error,
+        TeacherController.name,
+      );
+      res.status(500).json({
+        message:
+          'Failed to list highlight word from gpt due to error= ' +
+          error.message,
+        status: ApiResponseStatus.FAILURE,
+      });
+    }
+  }
+
+  @Post('/lessons/build')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: BuildLessonResponseDto,
+    description: `Gen words from all highlighted word in lession builder.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
+  async buildLesson(
+    @Req() req,
+    @Res() res,
+    @Body()
+    body: {
+      classId: string;
+      vocabularies: string[];
+      grammars: string[];
+      level: CEFR;
+    },
+  ) {
+    try {
+      const { grammars, vocabularies, level, classId } = body;
+      // see if class belongs to teacher
+      const user = req.user;
+      const clazz = await this.classRepository.find({
+        owner: user,
+        id: classId,
+      });
+      if (!clazz) {
+        res.status(404).json({
+          message: 'Class not found.',
+          status: ApiResponseStatus.FAILURE,
+        });
+      }
+
+      this.lessonService.buildLesson(classId, level, vocabularies, grammars);
+      res.status(200).json({
+        message:
+          'Request to build lesson susscessfully. Wait for it to be processed.',
+        status: ApiResponseStatus.SUCCESS,
+      });
+    } catch (error) {
+      this.logger.error('Calling buildLesson()', error, TeacherController.name);
+      res.status(500).json({
+        message: 'Failed to build lesson due to error= ' + error.message,
+        status: ApiResponseStatus.FAILURE,
+      });
+    }
+  }
+
+  @Get('/lessons/:id')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: GetLessonResponse,
+    description: `Get lessons.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
+  async getLesson(@Req() req, @Res() res, @Param('id') lessonId: string) {
+    try {
+      const user = req.user;
+
+      const lesson = await this.lessonService.getLesson(lessonId, user);
+      res.status(200).json({
+        message: 'Get lesson successfully',
+        status: ApiResponseStatus.SUCCESS,
+        lesson: lesson,
+      });
+    } catch (error) {
+      this.logger.error('Calling buildLesson()', error, TeacherController.name);
+      res.status(500).json({
+        message: 'Failed to build lesson due to error= ' + error.message,
+        status: ApiResponseStatus.FAILURE,
+      });
+    }
+  }
+
+  @Get('/lessons/list/:classId')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: ListLessonResponse,
+    description: `List lessons.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
+  async listLessons(@Req() req, @Res() res, @Param('classId') classId: string) {
+    try {
+      const user = req.user;
+      const lessons = await this.lessonService.listLessons(classId, user);
+      res.status(200).json({
+        message: 'List lesson successfully.',
+        status: ApiResponseStatus.SUCCESS,
+        lessons: lessons,
+      });
+    } catch (error) {
+      this.logger.error('Calling buildLesson()', error, TeacherController.name);
+      res.status(500).json({
+        message: 'Failed to build lesson due to error= ' + error.message,
+        status: ApiResponseStatus.FAILURE,
+      });
+    }
+  }
 }

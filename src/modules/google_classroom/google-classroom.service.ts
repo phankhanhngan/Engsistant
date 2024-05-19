@@ -298,7 +298,6 @@ export class GoogleClassroomService {
       const randomPhoto = photos
         ? photos[Math.floor(Math.random() * length)]?.src?.original
         : 'https://images.pexels.com/photos/8960464/pexels-photo-8960464.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
-      console.log(randomPhoto);
       return randomPhoto;
     } catch (err) {
       this.logger.error(

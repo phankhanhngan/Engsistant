@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Inject,
   Logger,
   Post,
@@ -15,6 +17,11 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 import { UpdateUserDto } from './dtos/UpdateUser.dto';
 import { UsersService } from '../users/users.service';
+import { ApiResponse } from '@nestjs/swagger';
+import {
+  AdminListUsers,
+  AdminUpdateUser,
+} from 'src/common/swagger_types/swagger-type.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard)
@@ -27,6 +34,10 @@ export class AdminController {
 
   @Post('/users/:id')
   @UseGuards(RoleAuthGuard([Role.ADMIN]))
+  @ApiResponse({
+    status: 200,
+    type: AdminUpdateUser,
+  })
   async updateUser(@Req() req, @Res() res, @Body() body: UpdateUserDto) {
     try {
       // Update a user
@@ -50,6 +61,11 @@ export class AdminController {
 
   // List
   @Get('/users')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: 200,
+    type: AdminListUsers,
+  })
   @UseGuards(RoleAuthGuard([Role.ADMIN]))
   async listUsers() {
     try {

@@ -18,11 +18,13 @@ import { Response } from 'express';
 import { GoogleClassroomService } from './google-classroom.service';
 import { ApiResponse } from '@nestjs/swagger';
 import { ApiResponseStatus, Role } from 'src/common/enum/common.enum';
-import { AuthorizeTypeDto } from './swagger_types/Authorize.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { ListClassDTO } from './swagger_types/ListClass.dto';
 import { ImportClassDto } from './dtos/ImportClass.dto';
 import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
+import {
+  AuthorizeTypeDto,
+  ListClassDTO,
+} from 'src/common/swagger_types/swagger-type.dto';
 
 @Controller('google/classes')
 @UseGuards(JwtAuthGuard)

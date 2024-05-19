@@ -19,7 +19,6 @@ import { LoginDto } from './dtos/LoginDto.dto';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { OAuth2Client } from './google_client/google-client.config';
 import { ApiResponse } from '@nestjs/swagger';
-import { GoogleLoginTypeDTO } from './swagger_types/GoogleLogin.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RegisterRoleDto } from './dtos/RegisterRole.dto';
 import { ApiResponseStatus, Role } from 'src/common/enum/common.enum';
@@ -27,6 +26,7 @@ import { UsersService } from '../users/users.service';
 import { UserRtnDto } from './dtos/UserRtnDto.dto';
 import { JwtService } from '@nestjs/jwt';
 import { plainToInstance } from 'class-transformer';
+import { GoogleLoginTypeDTO } from 'src/common/swagger_types/swagger-type.dto';
 
 @Controller('auth')
 export class AuthController {

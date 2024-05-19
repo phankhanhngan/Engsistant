@@ -1,6 +1,14 @@
-import { Entity, ManyToOne, Property, Unique } from '@mikro-orm/core';
+import {
+  Collection,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  Property,
+  Unique,
+} from '@mikro-orm/core';
 import { BaseUUID } from './baseUUID.enity';
 import { User } from './user.entity';
+import { Lesson } from './lesson.entity';
 
 @Entity({ tableName: 'classes' })
 export class Class extends BaseUUID {
@@ -35,4 +43,7 @@ export class Class extends BaseUUID {
 
   @Property({ nullable: false })
   cover!: string;
+
+  @OneToMany(() => Lesson, (lesson) => lesson.class)
+  lessons: Collection<Lesson>;
 }

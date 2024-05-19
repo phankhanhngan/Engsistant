@@ -20,11 +20,11 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiResponseStatus, Role } from 'src/common/enum/common.enum';
 import { UserRtnDto } from '../auth/dtos/UserRtnDto.dto';
 import { plainToInstance } from 'class-transformer';
-import { AuthorizeTypeDto } from '../google_classroom/swagger_types/Authorize.dto';
 import { SetGoogleTokenDto } from './dtos/SetGoogleToken.dto';
 import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 import { Class } from 'src/entities/class.entity';
 import { ClassRtnDto } from './dtos/ClassRtn.dto';
+import { AuthorizeTypeDto } from 'src/common/swagger_types/swagger-type.dto';
 
 @UseGuards(JwtAuthGuard)
 @ApiTags('users')
@@ -76,7 +76,6 @@ export class UsersController {
     try {
       const user = req.user;
       const code = setTokenDto.code;
-      console.log(code);
       const isSucess = await this.usersService.setGoogleToken(user, code);
 
       if (isSucess) {
