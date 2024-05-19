@@ -742,6 +742,15 @@
           "primary": false,
           "nullable": false,
           "mappedType": "string"
+        },
+        "functional_label": {
+          "name": "functional_label",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "string"
         }
       },
       "name": "vocabularies",

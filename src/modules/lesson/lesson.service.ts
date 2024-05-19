@@ -75,6 +75,7 @@ export class LessonService {
         vocab.level = level;
         vocab.imageUrl = 'imageUrl'; //TODO: replace imageUrl
         vocab.lesson = lesson;
+        vocab.functionalLabel = 'noun'; //TODO: replace functionalLabel
         return vocab;
       });
       await this.vocabularyRepository.persistAndFlush(vocabBuild);
