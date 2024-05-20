@@ -143,6 +143,7 @@ export class LessonService {
       });
       return {
         id: lesson.id,
+        status: lesson.status,
         sharedLink: lesson.sharedLink,
         description: lesson.description,
         name: lesson.name,
@@ -182,6 +183,7 @@ export class LessonService {
       return lessons.map((lesson) => {
         return {
           id: lesson.id,
+          status: lesson.status,
           sharedLink: lesson.sharedLink,
           description: lesson.description,
           name: lesson.name,

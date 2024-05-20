@@ -377,6 +377,16 @@
           "nullable": false,
           "mappedType": "string"
         },
+        "status": {
+          "name": "status",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "default": "'PENDING'",
+          "mappedType": "string"
+        },
         "class_id": {
           "name": "class_id",
           "type": "varchar(255)",

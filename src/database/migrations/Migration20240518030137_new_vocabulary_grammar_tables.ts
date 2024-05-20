@@ -34,19 +34,6 @@ export class Migration20240518030137_new_vocabulary_grammar_tables extends Migra
     this.addSql(
       'alter table `vocabularies` add constraint `vocabularies_lesson_id_foreign` foreign key (`lesson_id`) references `lessons` (`id`) on update cascade;',
     );
-
-    this.addSql(
-      'alter table `classes` drop index `classes_description_unique`;',
-    );
-    this.addSql(
-      'alter table `classes` drop index `classes_description_heading_unique`;',
-    );
-    this.addSql(
-      'alter table `classes` drop index `classes_alternative_link_unique`;',
-    );
-    this.addSql(
-      'alter table `classes` drop index `classes_drive_link_unique`;',
-    );
   }
 
   async down(): Promise<void> {

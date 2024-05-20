@@ -15,7 +15,11 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { ApiResponseStatus, Role } from 'src/common/enum/common.enum';
+import {
+  ApiResponseStatus,
+  LessonStatus,
+  Role,
+} from 'src/common/enum/common.enum';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 import { TeacherService } from './teacher.service';
@@ -92,6 +96,12 @@ export class TeacherController {
     try {
       const { paragraph, level } = body;
       const sentences = paragraph.match(/[^\.!\?]+[\.!\?]+/g);
+      if (sentences.length == 0) {
+        res.status(400).json({
+          message: 'Paragraph must have at least 1 sentence',
+          status: ApiResponseStatus.FAILURE,
+        });
+      }
       const vocabularies = await this.gptService.getHighlightedWords(
         paragraph,
         level,
@@ -101,7 +111,7 @@ export class TeacherController {
         level,
       );
       res.status(200).json({
-        message: 'List all highlighted words successfully',
+        message: 'List all highlighted words and grammar level successfully',
         status: ApiResponseStatus.SUCCESS,
         vocabularies: vocabularies,
         grammars: grammars,
@@ -161,6 +171,9 @@ export class TeacherController {
         message:
           'Request to build lesson susscessfully. Wait for it to be processed.',
         status: ApiResponseStatus.SUCCESS,
+        lesson: {
+          status: LessonStatus.PENDING,
+        },
       });
     } catch (error) {
       this.logger.error('Calling buildLesson()', error, TeacherController.name);
