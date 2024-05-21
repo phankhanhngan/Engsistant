@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, Property, TextType } from '@mikro-orm/core';
+import { Entity, ManyToOne, Property } from '@mikro-orm/core';
 import { BaseUUID } from './baseUUID.enity';
 import { Class } from './class.entity';
 import { CEFR } from '../common/constants/cefr-level';
@@ -20,6 +20,9 @@ export class Lesson extends BaseUUID {
 
   @Property({ nullable: false })
   status: LessonStatus = LessonStatus.PENDING;
+
+  @Property({ nullable: true })
+  color?: string;
 
   @ManyToOne({
     entity: () => Class,

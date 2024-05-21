@@ -1,6 +1,9 @@
+import { IsNotEmpty } from 'class-validator';
 import { CEFR } from 'src/common/constants/cefr-level';
 
-export interface ListWordsDto {
+export class ListWordsDto {
+  @IsNotEmpty()
   paragraph: string;
+  @IsNotEmpty()
   level: CEFR;
 }

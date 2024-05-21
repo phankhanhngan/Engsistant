@@ -12,6 +12,7 @@ import { Grammar } from 'src/entities/grammar.entity';
 import { User } from 'src/entities';
 import { GetLessonResponseDto } from './dtos/GetLessonResponse.dto';
 import { ListLessonResponseDto } from './dtos/ListLessonResponse.dto';
+import { generatePastelColor } from 'src/common/utils/utils';
 
 @Injectable()
 export class LessonService {
@@ -32,6 +33,8 @@ export class LessonService {
     level: CEFR,
     vocabularies: string[],
     grammars: string[],
+    name: string,
+    description: string,
   ): Promise<string[]> {
     try {
       // Separate the paragraph into sentences'
@@ -56,10 +59,12 @@ export class LessonService {
 
       const lesson = new Lesson();
       lesson.id = randomUUID();
-      lesson.description = 'discription'; //TODO: replace description
-      lesson.name = 'name'; //TODO: replace name
+      lesson.description = description; //TODO: replace description
+      lesson.name = name; //TODO: replace name
       lesson.level = level;
       lesson.class = clazz;
+      lesson.color = generatePastelColor();
+
       await this.lessonRepository.persistAndFlush(lesson);
 
       // Store vocabulary into db
@@ -145,6 +150,7 @@ export class LessonService {
         id: lesson.id,
         status: lesson.status,
         sharedLink: lesson.sharedLink,
+        color: lesson.color,
         description: lesson.description,
         name: lesson.name,
         level: lesson.level,
@@ -186,6 +192,7 @@ export class LessonService {
           status: lesson.status,
           sharedLink: lesson.sharedLink,
           description: lesson.description,
+          color: lesson.color,
           name: lesson.name,
           level: lesson.level,
           class: {
@@ -199,10 +206,4 @@ export class LessonService {
       throw new Error('Failed to list lesson due to error= ' + error.message);
     }
   }
-
-  randomEnumValue = (enumeration) => {
-    const values = Object.keys(enumeration);
-    const enumKey = values[Math.floor(Math.random() * values.length)];
-    return enumeration[enumKey];
-  };
 }

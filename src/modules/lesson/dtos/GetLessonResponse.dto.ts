@@ -8,6 +8,7 @@ export interface GetLessonResponseDto {
   description?: string;
   name: string;
   level: CEFR;
+  color?: string;
   class: {
     id: string;
     name: string;

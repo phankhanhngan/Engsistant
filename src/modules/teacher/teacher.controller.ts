@@ -28,7 +28,6 @@ import { ClassRtnDto } from '../users/dtos/ClassRtn.dto';
 import { GptService } from '../gpt/gpt.service';
 import { ListWordsDto } from './dtos/ListWord.dto';
 import { LessonService } from '../lesson/lesson.service';
-import { CEFR } from 'src/common/constants/cefr-level';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Class } from 'src/entities/class.entity';
 import { EntityRepository } from '@mikro-orm/core';
@@ -38,6 +37,7 @@ import {
   LessonRecommendSwaggerDto,
   ListLessonResponse,
 } from 'src/common/swagger_types/swagger-type.dto';
+import { BuildLessonRequestDto } from '../lesson/dtos/BuildLessonRequest.dto';
 
 @Controller('teacher')
 @UseGuards(JwtAuthGuard)
@@ -144,18 +144,14 @@ export class TeacherController {
     @Req() req,
     @Res() res,
     @Body()
-    body: {
-      classId: string;
-      vocabularies: string[];
-      grammars: string[];
-      level: CEFR;
-    },
+    body: BuildLessonRequestDto,
   ) {
     try {
-      const { grammars, vocabularies, level, classId } = body;
+      const { grammars, vocabularies, level, classId, name, description } =
+        body;
       // see if class belongs to teacher
       const user = req.user;
-      const clazz = await this.classRepository.find({
+      const clazz = await this.classRepository.findOne({
         owner: user,
         id: classId,
       });
@@ -164,9 +160,17 @@ export class TeacherController {
           message: 'Class not found.',
           status: ApiResponseStatus.FAILURE,
         });
+        return;
       }
 
-      this.lessonService.buildLesson(classId, level, vocabularies, grammars);
+      this.lessonService.buildLesson(
+        classId,
+        level,
+        vocabularies,
+        grammars,
+        name,
+        description,
+      );
       res.status(200).json({
         message:
           'Request to build lesson susscessfully. Wait for it to be processed.',
