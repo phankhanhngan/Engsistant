@@ -2,6 +2,10 @@
 import axios from 'axios';
 import 'dotenv/config';
 
+console.log('PREDICT_SERVER_URL', process.env.PREDICT_SERVER_URL);
+const predictServerUrl =
+  process.env.PREDICT_SERVER_URL ||
+  'https://9643-27-66-27-145.ngrok-free.app/predict';
 interface PredictResponse {
   cefr: string;
   sentence: string;
@@ -11,7 +15,7 @@ export const detectLevel = async (
 ): Promise<PredictResponse[]> => {
   try {
     // using axios
-    const response = await axios.post(`$process.env.PREDICT_SERVER_URL`, {
+    const response = await axios.post(predictServerUrl, {
       sentences: sentences,
     });
     return response.data as PredictResponse[];
