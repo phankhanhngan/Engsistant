@@ -23,8 +23,11 @@ export class Vocabulary extends BaseUUID {
   @Property({ type: TextType, nullable: false })
   exampleMeta!: string;
 
-  @Property({ nullable: false })
-  pronunciationAudio!: string;
+  @Property({ nullable: true })
+  pronunciationAudio?: string;
+
+  @Property({ nullable: true })
+  pronunciationWritten?: string;
 
   @Property({ nullable: false })
   level!: CEFR;

@@ -10,14 +10,15 @@ import { Class } from 'src/entities/class.entity';
 import { EntityRepository } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Role } from 'src/common/enum/common.enum';
-import e from 'express';
 import { generatePastelColor } from 'src/common/utils/utils';
 import { MailerService } from '@nest-modules/mailer';
 import axios from 'axios';
+import { OAuth2Client } from 'google-auth-library';
+import { generatePhoto } from '../pexels/pexels.service';
 
 @Injectable()
 export class GoogleClassroomService {
-  private oAuth2Client;
+  private readonly oAuth2Client: OAuth2Client;
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
     @InjectRepository(Class)
@@ -57,7 +58,7 @@ export class GoogleClassroomService {
       // const state = crypto.randomBytes(16).toString('hex');
 
       // Generate a url that asks permissions for the Drive activity scope
-      const authorizationUrl = this.oAuth2Client.generateAuthUrl({
+      return this.oAuth2Client.generateAuthUrl({
         // 'online' (default) or 'offline' (gets refresh_token)
         access_type: 'offline',
         /** Pass in the scopes array defined above.
@@ -69,7 +70,6 @@ export class GoogleClassroomService {
         // state: state,
         prompt: 'select_account',
       });
-      return authorizationUrl;
     } catch (err) {
       this.logger.error(
         'Calling authorize()',
@@ -82,14 +82,13 @@ export class GoogleClassroomService {
 
   async getToken(code: string) {
     try {
-      const token = await this.oAuth2Client.getToken(code);
-      return token;
+      return await this.oAuth2Client.getToken(code);
     } catch (err) {
       this.logger.error('Calling getToken()', err, GoogleClassroomService.name);
       throw err;
     }
   }
-  //: Promise<GoogleClassroomInfoDto[]>
+
   async fetchClassroomData(user: User): Promise<GoogleClassroomInfoDto[]> {
     try {
       // Query for the user's access token
@@ -101,7 +100,7 @@ export class GoogleClassroomService {
       }
 
       // Get access token from refresh token
-      await this.oAuth2Client.setCredentials({
+      this.oAuth2Client.setCredentials({
         refresh_token: user.googleRefreshToken,
       });
 
@@ -170,13 +169,13 @@ export class GoogleClassroomService {
           entity.googleCourseId = classInfo.id;
           entity.owner = user;
           entity.color = generatePastelColor();
-          entity.cover = await this.generateCoverImage();
+          entity.cover = await generatePhoto('zoom%20office%20backgrounds');
           this.classRepository.persist(entity);
         }),
       );
 
       // Import student
-      await this.oAuth2Client.setCredentials({
+      this.oAuth2Client.setCredentials({
         refresh_token: user.googleRefreshToken,
       });
 
@@ -217,7 +216,7 @@ export class GoogleClassroomService {
           );
           const classes = await existingUser.classes.loadItems();
 
-          if (existingUser == null) {
+          if (existingUser?.id == null) {
             existingUser.id = randomUUID();
             existingUser.email = student.email;
             existingUser.role = Role.STUDENT;
@@ -267,41 +266,6 @@ export class GoogleClassroomService {
     } catch (err) {
       this.logger.error(
         'Calling importClassroomData()',
-        err,
-        GoogleClassroomService.name,
-      );
-      throw err;
-    }
-  }
-
-  async generateCoverImage(): Promise<string> {
-    try {
-      // Generate a cover image for the class
-
-      // Call to pexels
-      const pexels = axios.create({
-        baseURL: 'https://api.pexels.com/v1',
-        headers: {
-          Authorization: process.env.PEXELS_API_KEY,
-        },
-      });
-
-      const page = randomInt(1, 10);
-      const perPage = 10;
-
-      const response = await pexels.get(
-        `/search?query=zoom%20office%20backgrounds&page=${page}&per_page=${perPage}`,
-      );
-
-      const photos = response.data?.photos;
-      const length = photos?.length ?? 0;
-      const randomPhoto = photos
-        ? photos[Math.floor(Math.random() * length)]?.src?.original
-        : 'https://images.pexels.com/photos/8960464/pexels-photo-8960464.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
-      return randomPhoto;
-    } catch (err) {
-      this.logger.error(
-        'Calling generateCoverImage()',
         err,
         GoogleClassroomService.name,
       );

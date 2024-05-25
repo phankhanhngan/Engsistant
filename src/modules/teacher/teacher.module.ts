@@ -9,6 +9,7 @@ import { LessonService } from '../lesson/lesson.service';
 import { Lesson } from 'src/entities/lesson.entity';
 import { Vocabulary } from 'src/entities/vocabulary.entity';
 import { Grammar } from 'src/entities/grammar.entity';
+import { DictionaryService } from '../dict/dictionary.service';
 
 @Module({
   imports: [
@@ -19,6 +20,6 @@ import { Grammar } from 'src/entities/grammar.entity';
     MikroOrmModule.forFeature([Grammar]),
   ],
   controllers: [TeacherController],
-  providers: [TeacherService, GptService, LessonService],
+  providers: [TeacherService, GptService, LessonService, DictionaryService],
 })
 export class TeacherModule {}

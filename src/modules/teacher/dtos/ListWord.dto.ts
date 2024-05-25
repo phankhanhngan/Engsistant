@@ -1,4 +1,4 @@
-import { IsNotEmpty } from 'class-validator';
+import { IsBoolean, IsNotEmpty } from 'class-validator';
 import { CEFR } from 'src/common/constants/cefr-level';
 
 export class ListWordsDto {
@@ -6,4 +6,6 @@ export class ListWordsDto {
   paragraph: string;
   @IsNotEmpty()
   level: CEFR;
+  @IsBoolean()
+  mock: boolean;
 }

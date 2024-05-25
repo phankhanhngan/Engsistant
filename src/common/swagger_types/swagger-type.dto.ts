@@ -23,7 +23,9 @@ export class VocabularyDto {
   antonymMeta: string[];
   synonymMeta: string[];
   pronunciationAudio: string;
+  pronunciationWritten: string;
   imageUrl: string;
+  functionalLabel: string;
 }
 
 export class LessonDto {

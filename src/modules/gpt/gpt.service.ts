@@ -2,9 +2,17 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import OpenAI from 'openai';
 import 'dotenv/config';
-import { hightlightWordsPrompt } from './prompt';
+import {
+  generateExampleForVocabularyPrompt,
+  grammarMetaPrompt,
+  highlightWordsPrompt,
+  recommendGrammarsPrompt,
+} from './prompt';
 import { CEFR } from 'src/common/constants/cefr-level';
 import { GrammarRecommendSwaggerDto } from 'src/common/swagger_types/swagger-type.dto';
+import { detectLevel } from '../detect/detect.service';
+import { GrammarMetaDto } from './dtos/GrammarMeta.dto';
+import { VocabMetaDto } from './dtos/VocabMeta.dto';
 
 @Injectable()
 export class GptService {
@@ -17,17 +25,27 @@ export class GptService {
 
   async getHighlightedWords(paragraph: string, level: CEFR): Promise<string[]> {
     try {
-      //   const response = await this.gptClient.chat.completions.create({
-      //     model: 'gpt-3.5-turbo',
-      //     messages: [
-      //       {
-      //         role: 'system',
-      //         content: hightlightWordsPrompt(paragraph, level),
-      //       },
-      //     ],
-      //   });
-
-      return ['excuse', 'blame', 'happen'];
+      const response = await this.gptClient.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: highlightWordsPrompt(paragraph, level),
+          },
+        ],
+      });
+      let words = [];
+      if (response.choices.length == 0) {
+        return words;
+      }
+      try {
+        words = words.concat(
+          JSON.parse(response.choices[0].message.content).words,
+        );
+      } catch (error) {
+        console.log('error', error);
+      }
+      return words;
     } catch (error) {
       this.logger.error(
         'Calling getHighlightedWords()',
@@ -46,43 +64,41 @@ export class GptService {
   ): Promise<GrammarRecommendSwaggerDto[]> {
     try {
       // For each sentence, call model to detect level
-      const sentencesWithLevel = sentences.map((sentence) => {
-        return {
-          sentence,
-          level: this.randomEnumValue(CEFR),
-        };
-      });
+      const sentencesWithLevel = await detectLevel(sentences);
       // If detected level is higher or equals than level, call gpt to get grammar features/ usage, example
-      const filteredSentences = sentencesWithLevel.filter(
-        (sentence) => sentence.level == level || sentence.level == level + 1,
-      );
+      const filteredSentences = sentencesWithLevel
+        .filter(
+          (sentence) => sentence.cefr == level || sentence.cefr == level + 1,
+        )
+        .map((sentence) => sentence.sentence);
 
-      //   const response = await this.gptClient.chat.completions.create({
-      //     model: 'gpt-3.5-turbo',
-      //     messages: [
-      //       {
-      //         role: 'system',
-      //         content: recommendGrammarsPrompt(filteredSentences, level),
-      //       },
-      //     ],
-      //   });
+      const response = await this.gptClient.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: recommendGrammarsPrompt(filteredSentences, level),
+          },
+        ],
+      });
+      let grammars = [];
 
-      return [
-        {
-          sentence:
-            'A moment of silence is a common way to remember tragedies.',
-          grammars: ['Present Simple', 'Infinitive'],
-        },
-        {
-          sentence:
-            'In drinking water, the higher the turbidity level, the higher the risk that people may develop diseases.',
-          grammars: [
-            'Comparatives',
-            'Present Simple',
-            'Modals - might, may, will, probably',
-          ],
-        },
-      ];
+      if (response.choices.length == 0) {
+        return grammars;
+      }
+
+      try {
+        const res = JSON.parse(response.choices[0].message.content);
+        res.forEach((element) => {
+          grammars = grammars.concat({
+            sentence: element.sentence,
+            grammars: element.grammars,
+          });
+        });
+      } catch (error) {
+        console.log('error', error);
+      }
+      return grammars;
     } catch (error) {
       this.logger.error(
         'Calling getHighlightedWords()',
@@ -95,9 +111,66 @@ export class GptService {
     }
   }
 
-  randomEnumValue = (enumeration) => {
-    const values = Object.keys(enumeration);
-    const enumKey = values[Math.floor(Math.random() * values.length)];
-    return enumeration[enumKey];
-  };
+  async getGrammarMeta(grammars: string[]): Promise<GrammarMetaDto[]> {
+    try {
+      const response = await this.gptClient.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: grammarMetaPrompt(grammars),
+          },
+        ],
+      });
+      let grammarMeta = [];
+      if (response.choices.length == 0) {
+        return grammarMeta;
+      }
+      grammarMeta = JSON.parse(response.choices[0].message.content);
+      if (grammarMeta.length == 0) return [];
+      return grammarMeta.map((el) => ({
+        grammar: el.grammar,
+        usage: el.usage,
+        example: el.example,
+      }));
+    } catch (error) {
+      this.logger.error('Calling getGrammarMeta()', error, GptService.name);
+      throw new Error(
+        'Failed to get grammar meta due to error= ' + error.message,
+      );
+    }
+  }
+
+  async getVocabularyExample(words: string[]): Promise<VocabMetaDto[]> {
+    try {
+      const response = await this.gptClient.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: generateExampleForVocabularyPrompt(words),
+          },
+        ],
+      });
+      let vocabularyMeta = [];
+      if (response.choices.length == 0) {
+        return vocabularyMeta;
+      }
+      vocabularyMeta = JSON.parse(response.choices[0].message.content);
+      if (vocabularyMeta.length == 0) return [];
+      return vocabularyMeta.map((el) => ({
+        word: el.word,
+        example: [el.example],
+      }));
+    } catch (error) {
+      this.logger.error(
+        'Calling getVocabularyExample()',
+        error,
+        GptService.name,
+      );
+      throw new Error(
+        'Failed to get vocabulary example due to error= ' + error.message,
+      );
+    }
+  }
 }

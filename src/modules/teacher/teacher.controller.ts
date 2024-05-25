@@ -38,6 +38,9 @@ import {
   ListLessonResponse,
 } from 'src/common/swagger_types/swagger-type.dto';
 import { BuildLessonRequestDto } from '../lesson/dtos/BuildLessonRequest.dto';
+import { grammars, vocabularies } from 'src/common/constants/mock';
+import { separateSentences } from '../../common/utils/utils';
+import { Lesson } from '../../entities/lesson.entity';
 
 @Controller('teacher')
 @UseGuards(JwtAuthGuard)
@@ -94,27 +97,35 @@ export class TeacherController {
     @Body() body: ListWordsDto,
   ) {
     try {
-      const { paragraph, level } = body;
-      const sentences = paragraph.match(/[^\.!\?]+[\.!\?]+/g);
+      const { paragraph, level, mock } = body;
+      if (mock) {
+        return res.status(200).json({
+          message: 'List all highlighted words and grammar level successfully',
+          status: ApiResponseStatus.SUCCESS,
+          vocabularies: vocabularies,
+          grammars: grammars,
+        });
+      }
+      const sentences = separateSentences(paragraph);
       if (sentences.length == 0) {
         res.status(400).json({
           message: 'Paragraph must have at least 1 sentence',
           status: ApiResponseStatus.FAILURE,
         });
       }
-      const vocabularies = await this.gptService.getHighlightedWords(
+      const recommendVocabularies = await this.gptService.getHighlightedWords(
         paragraph,
         level,
       );
-      const grammars = await this.gptService.getGrammarsFromSentences(
+      const recommendGrammars = await this.gptService.getGrammarsFromSentences(
         sentences,
         level,
       );
       res.status(200).json({
         message: 'List all highlighted words and grammar level successfully',
         status: ApiResponseStatus.SUCCESS,
-        vocabularies: vocabularies,
-        grammars: grammars,
+        vocabularies: recommendVocabularies,
+        grammars: recommendGrammars,
       });
     } catch (error) {
       this.logger.error(
@@ -163,17 +174,43 @@ export class TeacherController {
         return;
       }
 
-      this.lessonService.buildLesson(
-        classId,
-        level,
-        vocabularies,
-        grammars,
-        name,
-        description,
-      );
+      if (body.mock) {
+        this.lessonService
+          .buildMockLesson(classId, level, name, description)
+          .then(async (lesson: Lesson) => {
+            // update lesson status
+            await this.lessonService.updateLessonStatus(
+              lesson.id,
+              LessonStatus.READY,
+            );
+            console.log('build mock lesson done');
+          });
+        res.status(200).json({
+          message:
+            'Request to build lesson successfully. Wait for it to be processed.',
+          status: ApiResponseStatus.SUCCESS,
+          lesson: {
+            status: LessonStatus.PENDING,
+          },
+        });
+      }
+
+      this.lessonService
+        .buildLesson(classId, level, vocabularies, grammars, name, description)
+        .then(async (lesson: Lesson) => {
+          // update lesson status
+          await this.lessonService.updateLessonStatus(
+            lesson.id,
+            LessonStatus.READY,
+          );
+          // send mail
+          // push noti
+          console.log('build lesson done');
+        });
+
       res.status(200).json({
         message:
-          'Request to build lesson susscessfully. Wait for it to be processed.',
+          'Request to build lesson successfully. Wait for it to be processed.',
         status: ApiResponseStatus.SUCCESS,
         lesson: {
           status: LessonStatus.PENDING,

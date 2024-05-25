@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import 'dotenv/config';
 import { CEFR } from 'src/common/constants/cefr-level';
@@ -13,6 +13,11 @@ import { User } from 'src/entities';
 import { GetLessonResponseDto } from './dtos/GetLessonResponse.dto';
 import { ListLessonResponseDto } from './dtos/ListLessonResponse.dto';
 import { generatePastelColor } from 'src/common/utils/utils';
+import { GptService } from '../gpt/gpt.service';
+import { DictionaryService } from '../dict/dictionary.service';
+import { generatePhoto } from '../pexels/pexels.service';
+import { LessonStatus } from '../../common/enum/common.enum';
+import { fullMockLesson } from '../../common/constants/mock';
 
 @Injectable()
 export class LessonService {
@@ -26,6 +31,8 @@ export class LessonService {
     private vocabularyRepository: EntityRepository<Vocabulary>,
     @InjectRepository(Grammar)
     private grammarRepository: EntityRepository<Grammar>,
+    private readonly gptService: GptService,
+    private readonly dictionaryService: DictionaryService,
   ) {}
 
   async buildLesson(
@@ -35,26 +42,13 @@ export class LessonService {
     grammars: string[],
     name: string,
     description: string,
-  ): Promise<string[]> {
+  ): Promise<Lesson> {
     try {
-      // Separate the paragraph into sentences'
-      // Call dictionary api to get meaning/example/therasus/audio of the word
-      const vocabulary = vocabularies.map((word) => {
-        return {
-          word,
-          meaning: 'meaning',
-          example: 'example',
-          synonyms: ['synonyms', 'synonyms'],
-          antonyms: ['antonyms', 'antonyms'],
-          audio: 'audio',
-        };
-      });
-
       // Store the lesson into db
       const clazz = await this.classRepository.findOne({ id: classId });
 
       if (!clazz) {
-        throw new Error('Class not found');
+        throw new NotFoundException('Class not found');
       }
 
       const lesson = new Lesson();
@@ -67,39 +61,58 @@ export class LessonService {
 
       await this.lessonRepository.persistAndFlush(lesson);
 
+      // Separate the paragraph into sentences'
+      // Call dictionary api to get meaning/example/therasus/audio of the word
+      const dictMetaData = await this.dictionaryService.getDictMeta(
+        vocabularies,
+      );
+
+      const imageUrls = await Promise.all(
+        dictMetaData.map(async (vocabulary) => {
+          const url = await generatePhoto(vocabulary.word);
+          return {
+            word: vocabulary,
+            url: url,
+          };
+        }),
+      );
       // Store vocabulary into db
-      const vocabBuild = vocabulary.map((vocabulary) => {
-        const vocab = new Vocabulary();
-        vocab.id = randomUUID();
-        vocab.word = vocabulary.word;
-        vocab.meaning = vocabulary.meaning;
-        vocab.exampleMeta = JSON.stringify(['hehe', 'haha']); //TODO: replace exampleMeta
-        vocab.antonymMeta = JSON.stringify(vocabulary.antonyms);
-        vocab.synonymMeta = JSON.stringify(vocabulary.synonyms);
-        vocab.pronunciationAudio = vocabulary.audio;
-        vocab.level = level;
-        vocab.imageUrl = 'imageUrl'; //TODO: replace imageUrl
-        vocab.lesson = lesson;
-        vocab.functionalLabel = 'noun'; //TODO: replace functionalLabel
-        return vocab;
-      });
+      const vocabBuild = await Promise.all(
+        dictMetaData.map(async (vocabulary) => {
+          const vocab = new Vocabulary();
+          vocab.id = randomUUID();
+          vocab.word = vocabulary.word;
+          vocab.meaning = vocabulary.meaning;
+          vocab.exampleMeta = JSON.stringify(vocabulary.example);
+          vocab.antonymMeta = JSON.stringify(vocabulary.antonyms);
+          vocab.synonymMeta = JSON.stringify(vocabulary.synonyms);
+          vocab.pronunciationAudio = vocabulary.audio;
+          vocab.level = level;
+          vocab.imageUrl = imageUrls.find(
+            (el) => el.word.word === vocabulary.word,
+          ).url;
+          vocab.lesson = lesson;
+          vocab.functionalLabel = vocabulary.functionalLabel;
+          return vocab;
+        }),
+      );
       await this.vocabularyRepository.persistAndFlush(vocabBuild);
 
+      // Call gpt to get grammar features/ usage, example
+      const grammarMetaFromGpt = await this.gptService.getGrammarMeta(grammars);
       // Store grammar into db
-      const grammarBuild = grammars.map((gr) => {
-        // Call gpt to get grammar features/ usage, example
-
+      const grammarBuild = grammarMetaFromGpt.map((gr) => {
         const grammar = new Grammar();
         grammar.id = randomUUID();
-        grammar.name = 'name'; //TODO: replace name
-        grammar.usage = 'usage'; //TODO: replace usage
-        grammar.exampleMeta = JSON.stringify(['example', 'hehi']); //TODO: replace exampleMeta
+        grammar.name = gr.grammar;
+        grammar.usage = gr.usage;
+        grammar.exampleMeta = JSON.stringify([gr.example]);
         grammar.lesson = lesson;
         return grammar;
       });
       await this.grammarRepository.persistAndFlush(grammarBuild);
 
-      return ['excuse', 'blame', 'happen'];
+      return lesson;
     } catch (error) {
       this.logger.error('Calling LessonService()', error, LessonService.name);
       throw new Error('Failed to build lesson due to error= ' + error.message);
@@ -143,6 +156,8 @@ export class LessonService {
           antonymMeta: JSON.parse(vocabulary.antonymMeta),
           synonymMeta: JSON.parse(vocabulary.synonymMeta),
           pronunciationAudio: vocabulary.pronunciationAudio,
+          functionalLabel: vocabulary.functionalLabel,
+          pronunciationWritten: vocabulary.pronunciationWritten,
           imageUrl: vocabulary.imageUrl,
         };
       });
@@ -204,6 +219,92 @@ export class LessonService {
     } catch (error) {
       this.logger.error('Calling listLesson()', error, LessonService.name);
       throw new Error('Failed to list lesson due to error= ' + error.message);
+    }
+  }
+
+  async updateLessonStatus(
+    lessonId: string,
+    status: LessonStatus,
+  ): Promise<boolean> {
+    try {
+      const lessonToUpdate = await this.lessonRepository.findOne({
+        id: lessonId,
+      });
+      lessonToUpdate.status = status;
+      await this.lessonRepository.flush();
+      return true;
+    } catch (error) {
+      this.logger.error(
+        'Calling updateLessonStatus()',
+        error,
+        LessonService.name,
+      );
+      throw new Error(
+        'Failed to update lesson status due to error= ' + error.message,
+      );
+    }
+  }
+
+  async buildMockLesson(
+    classId: string,
+    level: CEFR,
+    name: string,
+    description: string,
+  ) {
+    try {
+      const clazz = await this.classRepository.findOne({ id: classId });
+
+      if (!clazz) {
+        throw new NotFoundException('Class not found');
+      }
+
+      const lesson = new Lesson();
+      lesson.id = randomUUID();
+      lesson.description = description;
+      lesson.name = name;
+      lesson.level = level;
+      lesson.class = clazz;
+      lesson.color = generatePastelColor();
+
+      await this.lessonRepository.persistAndFlush(lesson);
+      const mockVocab = fullMockLesson['vocabularies'];
+      const mockGrammar = fullMockLesson['grammars'];
+
+      const vocabBuild = await Promise.all(
+        mockVocab.map(async (vocabulary) => {
+          const vocab = new Vocabulary();
+          vocab.id = randomUUID();
+          vocab.word = vocabulary.word;
+          vocab.meaning = vocabulary.meaning;
+          vocab.exampleMeta = JSON.stringify(vocabulary.exampleMeta);
+          vocab.antonymMeta = JSON.stringify(vocabulary.antonymMeta);
+          vocab.synonymMeta = JSON.stringify(vocabulary.synonymMeta);
+          vocab.pronunciationAudio = vocabulary.pronunciationAudio;
+          vocab.level = level;
+          vocab.imageUrl = vocabulary.imageUrl;
+          vocab.lesson = lesson;
+          vocab.functionalLabel = '';
+          return vocab;
+        }),
+      );
+      await this.vocabularyRepository.persistAndFlush(vocabBuild);
+
+      const grammarBuild = mockGrammar.map((gr) => {
+        const grammar = new Grammar();
+        grammar.id = randomUUID();
+        grammar.name = gr.name;
+        grammar.usage = gr.usage;
+        grammar.exampleMeta = JSON.stringify(gr.exampleMeta);
+        grammar.lesson = lesson;
+        return grammar;
+      });
+      await this.grammarRepository.persistAndFlush(grammarBuild);
+      return lesson;
+    } catch (error) {
+      this.logger.error('Calling LessonService()', error, LessonService.name);
+      throw new Error(
+        'Failed to build mock lesson due to error= ' + error.message,
+      );
     }
   }
 }

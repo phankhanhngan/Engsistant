@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty } from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty } from 'class-validator';
 import { CEFR } from 'src/common/constants/cefr-level';
 
 export class BuildLessonRequestDto {
@@ -14,4 +14,6 @@ export class BuildLessonRequestDto {
   grammars: string[];
   @IsNotEmpty()
   level: CEFR;
+  @IsBoolean()
+  mock: boolean;
 }

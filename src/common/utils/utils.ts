@@ -1,3 +1,5 @@
+import { split, Syntax } from 'sentence-splitter';
+
 export const generatePastelColor = () => {
   const R = Math.floor(Math.random() * 127 + 127);
   const G = Math.floor(Math.random() * 127 + 127);
@@ -11,4 +13,17 @@ export const randomEnumValue = (enumeration) => {
   const values = Object.keys(enumeration);
   const enumKey = values[Math.floor(Math.random() * values.length)];
   return enumeration[enumKey];
+};
+
+export const separateSentences = (paragraph: string) => {
+  const sentences = split(paragraph);
+  if (sentences.length === 0) {
+    return [];
+  }
+  return (
+    sentences
+      .filter((el) => el.type === Syntax.Sentence)
+      // Extract the sentences from the result, removing the punctuation
+      .map((el) => el.raw.replace(/[.,\/#!$%^&*;:{}=\-_`~()]/g, ''))
+  );
 };
