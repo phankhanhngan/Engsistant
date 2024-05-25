@@ -87,6 +87,7 @@ export class LessonService {
           vocab.antonymMeta = JSON.stringify(vocabulary.antonyms);
           vocab.synonymMeta = JSON.stringify(vocabulary.synonyms);
           vocab.pronunciationAudio = vocabulary.audio;
+          vocab.pronunciationWritten = vocabulary.pronunciationWritten;
           vocab.level = level;
           vocab.imageUrl = imageUrls.find(
             (el) => el.word.word === vocabulary.word,

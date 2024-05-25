@@ -14,6 +14,5 @@ export class BuildLessonRequestDto {
   grammars: string[];
   @IsNotEmpty()
   level: CEFR;
-  @IsBoolean()
-  mock: boolean;
+  mock?: boolean;
 }

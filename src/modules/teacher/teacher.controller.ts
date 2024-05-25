@@ -174,7 +174,7 @@ export class TeacherController {
         return;
       }
 
-      if (body.mock) {
+      if (body.mock === true) {
         this.lessonService
           .buildMockLesson(classId, level, name, description)
           .then(async (lesson: Lesson) => {
@@ -245,7 +245,7 @@ export class TeacherController {
         lesson: lesson,
       });
     } catch (error) {
-      this.logger.error('Calling buildLesson()', error, TeacherController.name);
+      this.logger.error('Calling getLesson()', error, TeacherController.name);
       res.status(500).json({
         message: 'Failed to build lesson due to error= ' + error.message,
         status: ApiResponseStatus.FAILURE,

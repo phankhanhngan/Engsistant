@@ -114,7 +114,7 @@ export class DictionaryService {
       const examples = await this.gptService.getVocabularyExample(words);
       return dictData.map((el) => {
         const thesaurus = thesaurusData.find((data) => data.word === el.word);
-        const vocab = examples.find((data) => data.word === el.word);
+        const example = examples.find((data) => data.word === el.word);
         return {
           word: el.word,
           meaning: el.meaning,
@@ -123,7 +123,7 @@ export class DictionaryService {
           pronunciationWritten: el.pronunciationWritten,
           synonyms: thesaurus.synonyms,
           antonyms: thesaurus.antonyms,
-          example: vocab.example,
+          example: example.example,
         };
       });
     } catch (error) {
