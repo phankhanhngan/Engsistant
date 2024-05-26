@@ -85,11 +85,12 @@ export class DictionaryService {
       const response = await axios.get(
         `${this.THESAURUS_API_URL}/${word}?key=${this.THESAURUS_API_KEY}`,
       );
+      console.log(response);
       return {
         word: word,
         // get 3 synonyms
-        synonyms: response.data[0].meta.syns?.flat()?.slice(0, 3),
-        antonyms: response.data[0].meta.ants?.flat()?.slice(0, 3),
+        synonyms: response.data[0].meta?.syns?.flat()?.slice(0, 3) ?? [],
+        antonyms: response.data[0].meta?.ants?.flat()?.slice(0, 3) ?? [],
       };
     } catch (error) {
       this.logger.error(

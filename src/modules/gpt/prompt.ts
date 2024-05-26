@@ -17,7 +17,7 @@ export const recommendGrammarsPrompt = (sentences: string[], level: CEFR) => {
   Given: 
   Sentences: [${sentences}]
   Grammar list of level ${level}: ${grammarsByLevel}
-  Return me list of grammar of each sentence, example in json
+  Return me list of grammar of each sentence, example in json, if the sentence is not meaningful, return empty list for that sentence
   Example response:
   [{"sentence": sentences[0],"grammars": ["Present Simple","Present Simple"]},{"sentence": sentences[1],"grammars": ["Past Simple"]}
 ]`;
