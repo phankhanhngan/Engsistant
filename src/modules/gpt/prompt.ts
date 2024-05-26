@@ -20,7 +20,7 @@ export const recommendGrammarsPrompt = (sentences: string[], level: CEFR) => {
   Grammar list of level ${level}: ${grammarsByLevel}
   Return me list of grammar of each sentence in json, if sentence is not meaningful skip that sentence
   Example response:
-  [{"sentence": sentences[0],"grammars": ["Present Simple","Present Simple"]},{"sentence": sentences[1],"grammars": ["Past Simple"]}
+  [{"sentence": sentences[0],"grammars": ["Present Simple","Adverbs of frequency", ...]},{"sentence": sentences[1],"grammars": ["Past Simple"]}
 ]`;
 };
 
