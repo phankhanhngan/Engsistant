@@ -2,7 +2,6 @@
 import axios from 'axios';
 import 'dotenv/config';
 
-console.log('PREDICT_SERVER_URL', process.env.PREDICT_SERVER_URL);
 const predictServerUrl =
   process.env.PREDICT_SERVER_URL ||
   'https://9643-27-66-27-145.ngrok-free.app/predict';

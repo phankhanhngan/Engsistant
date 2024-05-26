@@ -4,6 +4,16 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { separateSentences } from './common/utils/utils';
 import { detectLevel } from './modules/detect/detect.service';
+import {
+  HttpException,
+  HttpStatus,
+  ValidationError,
+  ValidationPipe,
+} from '@nestjs/common';
+import {
+  getAllConstraints,
+  getCustomValidationError,
+} from './common/utils/exception.utils';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -30,6 +40,16 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOrigin,
   });
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      exceptionFactory: (errors: ValidationError[]) =>
+        new HttpException(
+          getCustomValidationError(getAllConstraints(errors)),
+          HttpStatus.BAD_REQUEST,
+        ),
+    }),
+  );
 
   const port = configService.get<number>('PORT') || 3003;
 

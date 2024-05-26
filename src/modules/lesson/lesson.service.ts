@@ -62,8 +62,9 @@ export class LessonService {
       await this.lessonRepository.persistAndFlush(lesson);
 
       // Separate the paragraph into sentences'
-      // Call dictionary api to get meaning/example/therasus/audio of the word
+      // Call dictionary api to get meaning/example/thesaurus/audio of the word
       const dictMetaData = await this.dictionaryService.getDictMeta(
+        level,
         vocabularies,
       );
 
@@ -100,14 +101,17 @@ export class LessonService {
       await this.vocabularyRepository.persistAndFlush(vocabBuild);
 
       // Call gpt to get grammar features/ usage, example
-      const grammarMetaFromGpt = await this.gptService.getGrammarMeta(grammars);
+      const grammarMetaFromGpt = await this.gptService.getGrammarMeta(
+        level,
+        grammars,
+      );
       // Store grammar into db
       const grammarBuild = grammarMetaFromGpt.map((gr) => {
         const grammar = new Grammar();
         grammar.id = randomUUID();
         grammar.name = gr.grammar;
         grammar.usage = gr.usage;
-        grammar.exampleMeta = JSON.stringify([gr.example]);
+        grammar.exampleMeta = JSON.stringify(gr.example);
         grammar.lesson = lesson;
         return grammar;
       });

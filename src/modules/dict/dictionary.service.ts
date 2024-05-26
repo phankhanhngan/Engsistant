@@ -7,6 +7,7 @@ import {
 } from './dtos/VocabularyMeta.dto';
 import axios from 'axios';
 import { GptService } from '../gpt/gpt.service';
+import { CEFR } from '../../common/constants/cefr-level';
 
 @Injectable()
 export class DictionaryService {
@@ -85,7 +86,6 @@ export class DictionaryService {
       const response = await axios.get(
         `${this.THESAURUS_API_URL}/${word}?key=${this.THESAURUS_API_KEY}`,
       );
-      console.log(response);
       return {
         word: word,
         // get 3 synonyms
@@ -104,7 +104,7 @@ export class DictionaryService {
     }
   }
 
-  async getDictMeta(words: string[]): Promise<DictMetaDto[]> {
+  async getDictMeta(level: CEFR, words: string[]): Promise<DictMetaDto[]> {
     try {
       const dictData = await Promise.all(
         words.map((word) => this.fetchDictData(word)),
@@ -112,7 +112,7 @@ export class DictionaryService {
       const thesaurusData = await Promise.all(
         words.map((word) => this.fetchThesaurusData(word)),
       );
-      const examples = await this.gptService.getVocabularyExample(words);
+      const examples = await this.gptService.getVocabularyExample(level, words);
       return dictData.map((el) => {
         const thesaurus = thesaurusData.find((data) => data.word === el.word);
         const example = examples.find((data) => data.word === el.word);

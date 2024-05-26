@@ -1,18 +1,18 @@
-import { IsArray, IsBoolean, IsNotEmpty } from 'class-validator';
+import { IsArray, IsNotEmpty } from 'class-validator';
 import { CEFR } from 'src/common/constants/cefr-level';
 
 export class BuildLessonRequestDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'ClassId is required' })
   classId: string;
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Name is required' })
   name!: string;
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Description is required' })
   description!: string;
-  @IsArray()
+  @IsArray({ message: 'Vocabularies is required' })
   vocabularies: string[];
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Grammars is required' })
   grammars: string[];
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Level is required' })
   level: CEFR;
   mock?: boolean;
 }

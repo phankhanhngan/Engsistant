@@ -111,14 +111,17 @@ export class GptService {
     }
   }
 
-  async getGrammarMeta(grammars: string[]): Promise<GrammarMetaDto[]> {
+  async getGrammarMeta(
+    level: CEFR,
+    grammars: string[],
+  ): Promise<GrammarMetaDto[]> {
     try {
       const response = await this.gptClient.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
-            content: grammarMetaPrompt(grammars),
+            content: grammarMetaPrompt(level, grammars),
           },
         ],
       });
@@ -131,7 +134,7 @@ export class GptService {
       return grammarMeta.map((el) => ({
         grammar: el.grammar,
         usage: el.usage,
-        example: el.example,
+        example: el.examples,
       }));
     } catch (error) {
       this.logger.error('Calling getGrammarMeta()', error, GptService.name);
@@ -141,14 +144,17 @@ export class GptService {
     }
   }
 
-  async getVocabularyExample(words: string[]): Promise<VocabMetaDto[]> {
+  async getVocabularyExample(
+    level: CEFR,
+    words: string[],
+  ): Promise<VocabMetaDto[]> {
     try {
       const response = await this.gptClient.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
-            content: generateExampleForVocabularyPrompt(words),
+            content: generateExampleForVocabularyPrompt(level, words),
           },
         ],
       });
@@ -160,7 +166,7 @@ export class GptService {
       if (vocabularyMeta.length == 0) return [];
       return vocabularyMeta.map((el) => ({
         word: el.word,
-        example: [el.example],
+        example: el.examples,
       }));
     } catch (error) {
       this.logger.error(
