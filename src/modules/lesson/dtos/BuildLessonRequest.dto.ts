@@ -10,6 +10,8 @@ export class BuildLessonRequestDto {
   description!: string;
   @IsArray({ message: 'Vocabularies is required' })
   vocabularies: string[];
+  @IsNotEmpty({ message: 'Paragraph is required' })
+  paragraph: string;
   @IsNotEmpty({ message: 'Grammars is required' })
   grammars: string[];
   @IsNotEmpty({ message: 'Level is required' })

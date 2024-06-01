@@ -32,9 +32,6 @@ export class Vocabulary extends BaseUUID {
   @Property({ nullable: false })
   level!: CEFR;
 
-  @Property({ nullable: false })
-  imageUrl!: string;
-
   @Property({ nullable: true })
   functionalLabel?: string;
 }

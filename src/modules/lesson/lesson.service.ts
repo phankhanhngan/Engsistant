@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import 'dotenv/config';
 import { CEFR } from 'src/common/constants/cefr-level';
@@ -12,12 +18,13 @@ import { Grammar } from 'src/entities/grammar.entity';
 import { User } from 'src/entities';
 import { GetLessonResponseDto } from './dtos/GetLessonResponse.dto';
 import { ListLessonResponseDto } from './dtos/ListLessonResponse.dto';
-import { generatePastelColor } from 'src/common/utils/utils';
+import { generatePastelColor, separateSentences } from 'src/common/utils/utils';
 import { GptService } from '../gpt/gpt.service';
 import { DictionaryService } from '../dict/dictionary.service';
-import { generatePhoto } from '../pexels/pexels.service';
-import { LessonStatus } from '../../common/enum/common.enum';
+import { LessonStatus, Role } from '../../common/enum/common.enum';
 import { fullMockLesson } from '../../common/constants/mock';
+import { VocabularyGenerateMetaDto } from '../gpt/dtos/VocabularyGenerateMetaDto.dto';
+import { BadRequestError } from 'openai';
 
 @Injectable()
 export class LessonService {
@@ -42,6 +49,7 @@ export class LessonService {
     grammars: string[],
     name: string,
     description: string,
+    paragraph: string,
   ): Promise<Lesson> {
     try {
       // Store the lesson into db
@@ -62,42 +70,36 @@ export class LessonService {
       await this.lessonRepository.persistAndFlush(lesson);
 
       // Separate the paragraph into sentences'
-      // Call dictionary api to get meaning/example/thesaurus/audio of the word
-      const dictMetaData = await this.dictionaryService.getDictMeta(
+      // Call gpt to get meaning/example/thesaurus/audio of the word
+      const sentencesAndIndexes = this.mapVocabIndex(paragraph, vocabularies);
+      const dictMetaData = await this.gptService.generateVocabulary(
         level,
-        vocabularies,
+        sentencesAndIndexes,
       );
 
-      const imageUrls = await Promise.all(
-        dictMetaData.map(async (vocabulary) => {
-          const url = await generatePhoto(vocabulary.word);
-          return {
-            word: vocabulary,
-            url: url,
-          };
-        }),
-      );
       // Store vocabulary into db
       const vocabBuild = await Promise.all(
         dictMetaData.map(async (vocabulary) => {
           const vocab = new Vocabulary();
+          const vocabDict = await this.dictionaryService.fetchDictData(
+            vocabulary.word,
+            vocabulary.functionalLabel,
+          );
           vocab.id = randomUUID();
           vocab.word = vocabulary.word;
           vocab.meaning = vocabulary.meaning;
-          vocab.exampleMeta = JSON.stringify(vocabulary.example);
+          vocab.exampleMeta = JSON.stringify(vocabulary.examples);
           vocab.antonymMeta = JSON.stringify(vocabulary.antonyms);
           vocab.synonymMeta = JSON.stringify(vocabulary.synonyms);
-          vocab.pronunciationAudio = vocabulary.audio;
-          vocab.pronunciationWritten = vocabulary.pronunciationWritten;
+          vocab.pronunciationAudio = vocabDict.audio;
+          vocab.pronunciationWritten = vocabDict.pronunciationWritten;
           vocab.level = level;
-          vocab.imageUrl = imageUrls.find(
-            (el) => el.word.word === vocabulary.word,
-          ).url;
           vocab.lesson = lesson;
           vocab.functionalLabel = vocabulary.functionalLabel;
           return vocab;
         }),
       );
+
       await this.vocabularyRepository.persistAndFlush(vocabBuild);
 
       // Call gpt to get grammar features/ usage, example
@@ -137,8 +139,17 @@ export class LessonService {
         return null;
       }
 
-      if (lesson.class.owner !== user) {
-        return null;
+      if (user.role === Role.TEACHER) {
+        if (lesson.class.owner !== user) {
+          throw new ForbiddenException('You do not have permission to access');
+        }
+      }
+
+      if (user.role === Role.STUDENT) {
+        const classes = await user.classes.loadItems();
+        if (!classes.some((cls) => cls.id === lesson.class.id)) {
+          throw new ForbiddenException('You do not have permission to access');
+        }
       }
 
       // load grammars, vocab
@@ -163,7 +174,6 @@ export class LessonService {
           pronunciationAudio: vocabulary.pronunciationAudio,
           functionalLabel: vocabulary.functionalLabel,
           pronunciationWritten: vocabulary.pronunciationWritten,
-          imageUrl: vocabulary.imageUrl,
         };
       });
       return {
@@ -192,11 +202,25 @@ export class LessonService {
     user: User,
   ): Promise<ListLessonResponseDto[]> {
     try {
+      if (user.role === Role.TEACHER) {
+        const clazz = await this.classRepository.findOne({ id: classId });
+        if (!clazz) {
+          throw new NotFoundException('Class not found');
+        }
+        if (clazz.owner !== user) {
+          throw new ForbiddenException('You do not have permission to access');
+        }
+      }
+      if (user.role === Role.STUDENT) {
+        const classes = await user.classes.loadItems();
+        if (!classes.some((cls) => cls.id === classId)) {
+          throw new ForbiddenException('You do not have permission to access');
+        }
+      }
       const lessons = await this.lessonRepository.find(
         {
           class: {
             id: classId,
-            owner: user,
           },
         },
         { populate: ['class'] },
@@ -255,6 +279,7 @@ export class LessonService {
     level: CEFR,
     name: string,
     description: string,
+    paragraph: string,
   ) {
     try {
       const clazz = await this.classRepository.findOne({ id: classId });
@@ -286,7 +311,6 @@ export class LessonService {
           vocab.synonymMeta = JSON.stringify(vocabulary.synonymMeta);
           vocab.pronunciationAudio = vocabulary.pronunciationAudio;
           vocab.level = level;
-          vocab.imageUrl = vocabulary.imageUrl;
           vocab.lesson = lesson;
           vocab.functionalLabel = '';
           return vocab;
@@ -312,4 +336,42 @@ export class LessonService {
       );
     }
   }
+
+  private mapVocabIndex = (
+    paragraph: string,
+    vocabularies: string[],
+  ): VocabularyGenerateMetaDto[] => {
+    try {
+      // separate sentences then filter out for sentences having vocabularies
+      const sentences = separateSentences(paragraph);
+      const filteredSentences = sentences.filter((sentence) =>
+        vocabularies.some((v) => sentence.includes(v)),
+      );
+
+      // map the index, if the there are the same words in the sentence, return 2 object with 2 index, but the same sentence
+      // If there is no vocab in the sentence, do not map
+      return vocabularies
+        .map((v) => {
+          // find sentence having v, if v apprear more than 1 time, return 2 object with 2 index
+          const sentences = filteredSentences.filter((s) => s.includes(v));
+          if (sentences.length < 1) {
+            return null;
+          }
+          // get all indexes
+          return sentences.map((sentence: string | string[]) => {
+            return {
+              word: v,
+              index: sentence.indexOf(v),
+              sentence: sentence,
+            };
+          });
+        })
+        .flat();
+    } catch (error) {
+      this.logger.error('Calling LessonService()', error, LessonService.name);
+      throw new Error(
+        'Failed to map vocab index due to error= ' + error.message,
+      );
+    }
+  };
 }

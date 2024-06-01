@@ -1,4 +1,8 @@
 export class VocabMetaDto {
   word: string;
-  example: string[];
+  meaning: string;
+  functionalLabel: string;
+  synonyms: string[];
+  antonyms: string[];
+  examples: string[];
 }

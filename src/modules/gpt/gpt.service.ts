@@ -3,7 +3,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import OpenAI from 'openai';
 import 'dotenv/config';
 import {
-  generateExampleForVocabularyPrompt,
+  generateVocabularyMetaPrompt,
   grammarMetaPrompt,
   highlightWordsPrompt,
   recommendGrammarsPrompt,
@@ -13,6 +13,7 @@ import { GrammarRecommendSwaggerDto } from 'src/common/swagger_types/swagger-typ
 import { detectLevel } from '../detect/detect.service';
 import { GrammarMetaDto } from './dtos/GrammarMeta.dto';
 import { VocabMetaDto } from './dtos/VocabMeta.dto';
+import { VocabularyGenerateMetaDto } from './dtos/VocabularyGenerateMetaDto.dto';
 
 @Injectable()
 export class GptService {
@@ -144,9 +145,9 @@ export class GptService {
     }
   }
 
-  async getVocabularyExample(
+  async generateVocabulary(
     level: CEFR,
-    words: string[],
+    sentencesAndIndexes: VocabularyGenerateMetaDto[],
   ): Promise<VocabMetaDto[]> {
     try {
       const response = await this.gptClient.chat.completions.create({
@@ -154,7 +155,7 @@ export class GptService {
         messages: [
           {
             role: 'system',
-            content: generateExampleForVocabularyPrompt(level, words),
+            content: generateVocabularyMetaPrompt(level, sentencesAndIndexes),
           },
         ],
       });
@@ -166,7 +167,11 @@ export class GptService {
       if (vocabularyMeta.length == 0) return [];
       return vocabularyMeta.map((el) => ({
         word: el.word,
-        example: el.examples,
+        meaning: el.meaning,
+        functionalLabel: el.functionalLabel,
+        synonyms: el.synonyms,
+        antonyms: el.antonyms,
+        examples: el.examples,
       }));
     } catch (error) {
       this.logger.error(

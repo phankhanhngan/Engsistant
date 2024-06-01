@@ -158,8 +158,15 @@ export class TeacherController {
     body: BuildLessonRequestDto,
   ) {
     try {
-      const { grammars, vocabularies, level, classId, name, description } =
-        body;
+      const {
+        grammars,
+        vocabularies,
+        level,
+        classId,
+        name,
+        description,
+        paragraph,
+      } = body;
       // see if class belongs to teacher
       const user = req.user;
       const clazz = await this.classRepository.findOne({
@@ -176,7 +183,7 @@ export class TeacherController {
 
       if (body.mock === true) {
         this.lessonService
-          .buildMockLesson(classId, level, name, description)
+          .buildMockLesson(classId, level, name, description, paragraph)
           .then(async (lesson: Lesson) => {
             // update lesson status
             await this.lessonService.updateLessonStatus(
@@ -185,7 +192,7 @@ export class TeacherController {
             );
             console.log('build mock lesson done');
           });
-        res.status(200).json({
+        return res.status(200).json({
           message:
             'Request to build lesson successfully. Wait for it to be processed.',
           status: ApiResponseStatus.SUCCESS,
@@ -196,7 +203,15 @@ export class TeacherController {
       }
 
       this.lessonService
-        .buildLesson(classId, level, vocabularies, grammars, name, description)
+        .buildLesson(
+          classId,
+          level,
+          vocabularies,
+          grammars,
+          name,
+          description,
+          paragraph,
+        )
         .then(async (lesson: Lesson) => {
           // update lesson status
           await this.lessonService.updateLessonStatus(

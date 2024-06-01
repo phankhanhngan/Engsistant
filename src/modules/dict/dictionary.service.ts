@@ -1,13 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import {
-  DictMetaDto,
-  ThesaurusData,
-  VocabData,
-} from './dtos/VocabularyMeta.dto';
+import { ThesaurusData, VocabData } from './dtos/VocabularyMeta.dto';
 import axios from 'axios';
 import { GptService } from '../gpt/gpt.service';
-import { CEFR } from '../../common/constants/cefr-level';
 
 @Injectable()
 export class DictionaryService {
@@ -42,7 +37,13 @@ export class DictionaryService {
     return audio[0];
   }
 
-  async fetchDictData(word: string): Promise<VocabData> {
+  /**
+   * Get only audio and pronunciation written
+   */
+  async fetchDictData(
+    word: string,
+    functionalLabel: string,
+  ): Promise<VocabData> {
     try {
       const response = await axios.get(
         `${this.DICT_API_URL}/${word}?key=${this.DICT_API_KEY}`,
@@ -50,23 +51,21 @@ export class DictionaryService {
       if (response.data.length === 0) {
         return null;
       }
-      const audio = response.data[0].hwi?.prs
-        ? response.data[0].hwi?.prs[0]?.sound?.audio
-        : null;
+      const vocab = response.data.find((el) => el.fl === functionalLabel);
+      if (vocab === undefined || vocab === null) {
+        return null;
+      }
+      const audio = vocab.hwi?.prs ? vocab.hwi?.prs[0]?.sound?.audio : null;
       let audioLink = null;
       if (audio !== undefined && audio !== null) {
         audioLink = `${this.AUDIO_API_URL}/${this.getSubDir(
           word,
         )}/${audio}.mp3`;
       }
-      const pronunciation = response.data[0].hwi?.prs
-        ? response.data[0].hwi?.prs[0]?.mw
-        : null;
+      const pronunciation = vocab.hwi?.prs ? vocab.hwi?.prs[0]?.mw : null;
       return {
         word: word,
-        meaning: response.data[0].shortdef[0],
         audio: audioLink,
-        functionalLabel: response.data[0].fl,
         pronunciationWritten: pronunciation,
       };
     } catch (error) {
@@ -103,35 +102,35 @@ export class DictionaryService {
       );
     }
   }
-
-  async getDictMeta(level: CEFR, words: string[]): Promise<DictMetaDto[]> {
-    try {
-      const dictData = await Promise.all(
-        words.map((word) => this.fetchDictData(word)),
-      ).then((res) => res.filter((el) => el !== null));
-      const thesaurusData = await Promise.all(
-        words.map((word) => this.fetchThesaurusData(word)),
-      );
-      const examples = await this.gptService.getVocabularyExample(level, words);
-      return dictData.map((el) => {
-        const thesaurus = thesaurusData.find((data) => data.word === el.word);
-        const example = examples.find((data) => data.word === el.word);
-        return {
-          word: el.word,
-          meaning: el.meaning,
-          audio: el.audio,
-          functionalLabel: el.functionalLabel,
-          pronunciationWritten: el.pronunciationWritten,
-          synonyms: thesaurus.synonyms,
-          antonyms: thesaurus.antonyms,
-          example: example.example,
-        };
-      });
-    } catch (error) {
-      this.logger.error('Calling getDictMeta()', error, DictionaryService.name);
-      throw new Error(
-        'Failed to get dictionary meta due to error= ' + error.message,
-      );
-    }
-  }
+  //
+  // async getDictMeta(level: CEFR, words: string[]): Promise<DictMetaDto[]> {
+  //   try {
+  //     const dictData = await Promise.all(
+  //       words.map((word) => this.fetchDictData(word)),
+  //     ).then((res) => res.filter((el) => el !== null));
+  //     const thesaurusData = await Promise.all(
+  //       words.map((word) => this.fetchThesaurusData(word)),
+  //     );
+  //     const examples = await this.gptService.getVocabularyExample(level, words);
+  //     return dictData.map((el) => {
+  //       const thesaurus = thesaurusData.find((data) => data.word === el.word);
+  //       const example = examples.find((data) => data.word === el.word);
+  //       return {
+  //         word: el.word,
+  //         meaning: el.meaning,
+  //         audio: el.audio,
+  //         functionalLabel: el.functionalLabel,
+  //         pronunciationWritten: el.pronunciationWritten,
+  //         synonyms: thesaurus.synonyms,
+  //         antonyms: thesaurus.antonyms,
+  //         example: example.example,
+  //       };
+  //     });
+  //   } catch (error) {
+  //     this.logger.error('Calling getDictMeta()', error, DictionaryService.name);
+  //     throw new Error(
+  //       'Failed to get dictionary meta due to error= ' + error.message,
+  //     );
+  //   }
+  // }
 }

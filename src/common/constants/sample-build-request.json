@@ -1,0 +1,28 @@
+{
+    "classId": "188667c8-ef1b-4fe3-bb5a-d5b547d9242d",
+    "name": "Lesson real",
+    "description": "This is my lesson",
+    "level": "C1",
+    "vocabularies": [
+        "serve",
+        "practice",
+        "tournament",
+        "struggle",
+        "confidence",
+        "inconsistent",
+        "threat",
+        "nerves",
+        "injury",
+        "performance",
+        "composure",
+        "determination",
+        "remarkable",
+        "comeback"
+    ],
+    "grammars": [
+        "Past simple",
+        "Passive voice",
+        "Modals of deduction and speculation"
+    ],
+    "paragraph": "During the tennis tournament, the young athlete's serve was both a strength and a struggle. Despite hours of practice, his performance was inconsistent, wavering between moments of brilliance and bouts of nerves. His confidence took a hit after a minor injury threatened his chances, but his determination never wavered. Although the pressure was immense, he managed to maintain his composure, showing a remarkable resilience. His remarkable ability to make a comeback after each setback was a testament to his dedication. In the end, his struggle transformed into a triumph, serving as an inspiration to many. The serve he perfected in practice also served to intimidate his opponents."
+}

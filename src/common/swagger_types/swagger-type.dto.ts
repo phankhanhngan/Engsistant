@@ -24,7 +24,6 @@ export class VocabularyDto {
   synonymMeta: string[];
   pronunciationAudio: string;
   pronunciationWritten: string;
-  imageUrl: string;
   functionalLabel: string;
 }
 

@@ -11,10 +11,8 @@ export class DictMetaDto {
 
 export class VocabData {
   word: string;
-  meaning: string;
   audio?: string;
   pronunciationWritten?: string;
-  functionalLabel: string;
 }
 
 export class ThesaurusData {

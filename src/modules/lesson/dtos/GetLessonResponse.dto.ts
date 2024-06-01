@@ -27,6 +27,5 @@ export interface GetLessonResponseDto {
     antonymMeta: string[];
     synonymMeta: string[];
     pronunciationAudio: string;
-    imageUrl: string;
   }[];
 }
