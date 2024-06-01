@@ -28,4 +28,7 @@ export class Lesson extends BaseUUID {
     entity: () => Class,
   })
   class: Class;
+
+  @Property({ nullable: true })
+  cover?: string;
 }

@@ -17,4 +17,5 @@ export interface GetLessonResponseDto {
   };
   grammars: GrammarDto[];
   vocabularies: VocabularyDto[];
+  cover?: string;
 }

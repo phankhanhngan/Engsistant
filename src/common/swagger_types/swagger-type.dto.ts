@@ -39,6 +39,7 @@ export class LessonDto {
   };
   grammars: GrammarDto[];
   vocabularies: VocabularyDto[];
+  cover?: string;
 }
 export class GetLessonResponse extends BaseSwaggerResponseDto {
   lesson: LessonDto;
@@ -54,6 +55,7 @@ export class ListLessonDto {
     id: string;
     name: string;
   };
+  cover?: string;
 }
 export class ListLessonResponse extends BaseSwaggerResponseDto {
   lessons: LessonDto[];
@@ -95,7 +97,7 @@ export class ListImportedClassDto extends BaseSwaggerResponseDto {
     googleCourseId?: string;
     color?: string;
     students?: User[];
-    cover: string;
+    cover?: string;
   }[];
 }
 
@@ -144,6 +146,7 @@ export class StudentLessonDto {
   };
   grammars: GrammarDto[];
   vocabularies: VocabularyDto[];
+  cover?: string;
 }
 export class StudentGetLessonResponse extends BaseSwaggerResponseDto {
   lesson: StudentLessonDto;

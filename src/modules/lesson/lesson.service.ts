@@ -29,6 +29,7 @@ import { GrammarDto } from './dtos/Grammar.dto';
 import e from 'express';
 import { UserItem } from 'src/entities/userItem.entity';
 import { StudentGetLessonResponseDto } from './dtos/StudentGetLessonResponse.dto';
+import { generatePhoto } from '../pexels/pexels.service';
 
 @Injectable()
 export class LessonService {
@@ -72,6 +73,7 @@ export class LessonService {
       lesson.level = level;
       lesson.class = clazz;
       lesson.color = generatePastelColor();
+      lesson.cover = await generatePhoto('facebook cover books');
 
       await this.lessonRepository.persistAndFlush(lesson);
 
@@ -227,6 +229,7 @@ export class LessonService {
           id: lesson.class.id,
           name: lesson.class.name,
         },
+        cover: lesson.cover,
         grammars: grammarBuild,
         vocabularies: vocabBuild,
       };
@@ -282,6 +285,7 @@ export class LessonService {
             id: lesson.class.id,
             name: lesson.class.name,
           },
+          cover: lesson.cover,
         };
       });
     } catch (error) {
@@ -335,6 +339,7 @@ export class LessonService {
       lesson.level = level;
       lesson.class = clazz;
       lesson.color = generatePastelColor();
+      lesson.cover = await generatePhoto('facebook cover books');
 
       await this.lessonRepository.persistAndFlush(lesson);
       const mockVocab = fullMockLesson['vocabularies'];

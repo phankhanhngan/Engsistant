@@ -404,6 +404,15 @@
           "primary": false,
           "nullable": false,
           "mappedType": "string"
+        },
+        "cover": {
+          "name": "cover",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "string"
         }
       },
       "name": "lessons",

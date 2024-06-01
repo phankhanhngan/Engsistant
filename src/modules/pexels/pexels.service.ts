@@ -20,10 +20,10 @@ export const generatePhoto = async (search: string): Promise<string> => {
     const photos = response.data?.photos;
     const length = photos?.length ?? 0;
     if (length === 0)
-      return 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/832px-No-Image-Placeholder.svg.png';
+      return 'https://images.pexels.com/photos/4947406/pexels-photo-4947406.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
     return photos
-      ? photos[Math.floor(Math.random() * length)]?.src?.original
-      : 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/832px-No-Image-Placeholder.svg.png';
+      ? photos[Math.floor(Math.random() * length)]?.src?.landscape
+      : 'https://images.pexels.com/photos/4947406/pexels-photo-4947406.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
   } catch (error) {
     console.error('Error in generatePhoto', error);
     return null;

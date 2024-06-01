@@ -1,6 +1,5 @@
 import { CEFR } from 'src/common/constants/cefr-level';
 import { LessonStatus } from 'src/common/enum/common.enum';
-import { VocabularyDto } from './Vocabulary.dto';
 
 export interface StudentGrammarDto {
   id: string;
@@ -37,4 +36,5 @@ export interface StudentGetLessonResponseDto {
   };
   grammars: StudentGrammarDto[];
   vocabularies: StudentVocabularyDto[];
+  cover?: string;
 }
