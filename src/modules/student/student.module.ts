@@ -11,6 +11,7 @@ import { Vocabulary } from 'src/entities/vocabulary.entity';
 import { Grammar } from 'src/entities/grammar.entity';
 import { GptService } from '../gpt/gpt.service';
 import { DictionaryService } from '../dict/dictionary.service';
+import { UserItem } from 'src/entities/userItem.entity';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DictionaryService } from '../dict/dictionary.service';
     MikroOrmModule.forFeature([Class]),
     MikroOrmModule.forFeature([Vocabulary]),
     MikroOrmModule.forFeature([Grammar]),
+    MikroOrmModule.forFeature([UserItem]),
     UsersModule,
   ],
   controllers: [StudentController],

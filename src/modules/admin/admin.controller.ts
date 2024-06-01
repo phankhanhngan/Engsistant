@@ -17,13 +17,14 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 import { UpdateUserDto } from './dtos/UpdateUser.dto';
 import { UsersService } from '../users/users.service';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   AdminListUsers,
   AdminUpdateUser,
 } from 'src/common/swagger_types/swagger-type.dto';
 
 @Controller('admin')
+@ApiTags('admin')
 @UseGuards(JwtAuthGuard)
 export class AdminController {
   constructor(
@@ -52,10 +53,7 @@ export class AdminController {
       this.logger.error(
         `Error occurred while updating a user: ${error.message} ${error.stack}`,
       );
-      res.status(500).json({
-        message: `User updated failed due to error=${error.message} ${error.stack}`,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 

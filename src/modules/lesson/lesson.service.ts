@@ -24,7 +24,11 @@ import { DictionaryService } from '../dict/dictionary.service';
 import { LessonStatus, Role } from '../../common/enum/common.enum';
 import { fullMockLesson } from '../../common/constants/mock';
 import { VocabularyGenerateMetaDto } from '../gpt/dtos/VocabularyGenerateMetaDto.dto';
-import { BadRequestError } from 'openai';
+import { VocabularyDto } from './dtos/Vocabulary.dto';
+import { GrammarDto } from './dtos/Grammar.dto';
+import e from 'express';
+import { UserItem } from 'src/entities/userItem.entity';
+import { StudentGetLessonResponseDto } from './dtos/StudentGetLessonResponse.dto';
 
 @Injectable()
 export class LessonService {
@@ -38,6 +42,8 @@ export class LessonService {
     private vocabularyRepository: EntityRepository<Vocabulary>,
     @InjectRepository(Grammar)
     private grammarRepository: EntityRepository<Grammar>,
+    @InjectRepository(UserItem)
+    private userItemRepository: EntityRepository<UserItem>,
     private readonly gptService: GptService,
     private readonly dictionaryService: DictionaryService,
   ) {}
@@ -122,11 +128,14 @@ export class LessonService {
       return lesson;
     } catch (error) {
       this.logger.error('Calling LessonService()', error, LessonService.name);
-      throw new Error('Failed to build lesson due to error= ' + error.message);
+      throw error;
     }
   }
 
-  async getLesson(lessonId: string, user: User): Promise<GetLessonResponseDto> {
+  async getLesson(
+    lessonId: string,
+    user: User,
+  ): Promise<GetLessonResponseDto | StudentGetLessonResponseDto> {
     try {
       const lesson = await this.lessonRepository.findOne(
         {
@@ -139,13 +148,16 @@ export class LessonService {
         return null;
       }
 
-      if (user.role === Role.TEACHER) {
+      const isStudent = user.role === Role.STUDENT;
+      const isTeacher = user.role === Role.TEACHER;
+
+      if (isTeacher) {
         if (lesson.class.owner !== user) {
           throw new ForbiddenException('You do not have permission to access');
         }
       }
 
-      if (user.role === Role.STUDENT) {
+      if (isStudent) {
         const classes = await user.classes.loadItems();
         if (!classes.some((cls) => cls.id === lesson.class.id)) {
           throw new ForbiddenException('You do not have permission to access');
@@ -155,27 +167,54 @@ export class LessonService {
       // load grammars, vocab
       const grammars = await this.grammarRepository.find({ lesson: lesson });
       const vocabularies = await this.vocabularyRepository.find({ lesson });
-      const grammarBuild = grammars.map((grammar) => {
-        return {
-          id: grammar.id,
-          name: grammar.name,
-          usage: grammar.usage,
-          exampleMeta: JSON.parse(grammar.exampleMeta),
-        };
-      });
-      const vocabBuild = vocabularies.map((vocabulary) => {
-        return {
-          id: vocabulary.id,
-          word: vocabulary.word,
-          meaning: vocabulary.meaning,
-          exampleMeta: JSON.parse(vocabulary.exampleMeta),
-          antonymMeta: JSON.parse(vocabulary.antonymMeta),
-          synonymMeta: JSON.parse(vocabulary.synonymMeta),
-          pronunciationAudio: vocabulary.pronunciationAudio,
-          functionalLabel: vocabulary.functionalLabel,
-          pronunciationWritten: vocabulary.pronunciationWritten,
-        };
-      });
+      const grammarBuild = await Promise.all(
+        grammars.map(async (grammar) => {
+          const isMarked = await this.userItemRepository.findOne({
+            userId: user.id,
+            itemId: grammar.id,
+          });
+          const grammarRtn = {
+            id: grammar.id,
+            name: grammar.name,
+            usage: grammar.usage,
+            exampleMeta: JSON.parse(grammar.exampleMeta),
+          };
+          if (isStudent) {
+            return {
+              ...grammarRtn,
+              isMarked: isMarked ? true : false,
+            };
+          }
+          return grammarRtn;
+        }),
+      );
+      const vocabBuild = await Promise.all(
+        vocabularies.map(async (vocabulary) => {
+          const isMarked = await this.userItemRepository.findOne({
+            userId: user.id,
+            itemId: vocabulary.id,
+          });
+          const vocabRtn = {
+            id: vocabulary.id,
+            word: vocabulary.word,
+            meaning: vocabulary.meaning,
+            exampleMeta: JSON.parse(vocabulary.exampleMeta),
+            antonymMeta: JSON.parse(vocabulary.antonymMeta),
+            synonymMeta: JSON.parse(vocabulary.synonymMeta),
+            pronunciationAudio: vocabulary.pronunciationAudio,
+            functionalLabel: vocabulary.functionalLabel,
+            pronunciationWritten: vocabulary.pronunciationWritten,
+            level: vocabulary.level,
+          };
+          if (isStudent) {
+            return {
+              ...vocabRtn,
+              isMarked: isMarked ? true : false,
+            };
+          }
+          return vocabRtn;
+        }),
+      );
       return {
         id: lesson.id,
         status: lesson.status,
@@ -193,7 +232,7 @@ export class LessonService {
       };
     } catch (error) {
       this.logger.error('Calling getLesson()', error, LessonService.name);
-      throw new Error('Failed to get lesson due to error= ' + error.message);
+      throw error;
     }
   }
 
@@ -247,7 +286,7 @@ export class LessonService {
       });
     } catch (error) {
       this.logger.error('Calling listLesson()', error, LessonService.name);
-      throw new Error('Failed to list lesson due to error= ' + error.message);
+      throw error;
     }
   }
 
@@ -259,6 +298,9 @@ export class LessonService {
       const lessonToUpdate = await this.lessonRepository.findOne({
         id: lessonId,
       });
+      if (!lessonToUpdate) {
+        throw new NotFoundException('Lesson not found');
+      }
       lessonToUpdate.status = status;
       await this.lessonRepository.flush();
       return true;
@@ -268,9 +310,7 @@ export class LessonService {
         error,
         LessonService.name,
       );
-      throw new Error(
-        'Failed to update lesson status due to error= ' + error.message,
-      );
+      throw error;
     }
   }
 
@@ -331,9 +371,7 @@ export class LessonService {
       return lesson;
     } catch (error) {
       this.logger.error('Calling LessonService()', error, LessonService.name);
-      throw new Error(
-        'Failed to build mock lesson due to error= ' + error.message,
-      );
+      throw error;
     }
   }
 
@@ -369,9 +407,152 @@ export class LessonService {
         .flat();
     } catch (error) {
       this.logger.error('Calling LessonService()', error, LessonService.name);
-      throw new Error(
-        'Failed to map vocab index due to error= ' + error.message,
-      );
+      throw error;
     }
   };
+
+  async updateVocabulary(
+    user: User,
+    id: string,
+    meaning: string,
+    exampleMeta: string[],
+    antonymMeta: string[],
+    synonymMeta: string[],
+  ): Promise<VocabularyDto> {
+    try {
+      const vocabulary = await this.vocabularyRepository.findOne({ id: id });
+      if (!vocabulary) {
+        throw new NotFoundException('Vocabulary not found');
+      }
+      // check if the user is the owner of the class having lessons with that vocabulary
+      const lessonId = vocabulary.lesson.id;
+      const lesson = await this.lessonRepository.findOne(
+        { id: lessonId },
+        { populate: ['class'] },
+      );
+      if (!lesson) {
+        throw new NotFoundException('Lesson not found');
+      }
+      const clazz = lesson.class;
+      if (!clazz) {
+        throw new NotFoundException('Class not found');
+      }
+      if (clazz.owner !== user) {
+        throw new ForbiddenException('You do not have permission to access');
+      }
+      vocabulary.meaning = meaning;
+      vocabulary.exampleMeta = JSON.stringify(exampleMeta);
+      vocabulary.antonymMeta = JSON.stringify(antonymMeta);
+      vocabulary.synonymMeta = JSON.stringify(synonymMeta);
+      await this.vocabularyRepository.persistAndFlush(vocabulary);
+      return {
+        id: vocabulary.id,
+        word: vocabulary.word,
+        meaning: vocabulary.meaning,
+        exampleMeta: JSON.parse(vocabulary.exampleMeta),
+        antonymMeta: JSON.parse(vocabulary.antonymMeta),
+        synonymMeta: JSON.parse(vocabulary.synonymMeta),
+        pronunciationAudio: vocabulary.pronunciationAudio,
+        functionalLabel: vocabulary.functionalLabel,
+        level: vocabulary.level,
+        pronunciationWritten: vocabulary.pronunciationWritten,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Calling updateVocabulary()',
+        error,
+        LessonService.name,
+      );
+      throw error;
+    }
+  }
+
+  async updateGrammar(
+    user: User,
+    id: string,
+    usage: string,
+    exampleMeta: string[],
+  ): Promise<GrammarDto> {
+    try {
+      const grammar = await this.grammarRepository.findOne({ id: id });
+      // check if the user is the owner of the class having lessons with that grammar
+      const lessonId = grammar.lesson.id;
+      const lesson = await this.lessonRepository.findOne(
+        { id: lessonId },
+        { populate: ['class'] },
+      );
+      if (!lesson) {
+        throw new NotFoundException('Lesson not found');
+      }
+      const clazz = lesson.class;
+      if (!clazz) {
+        throw new NotFoundException('Class not found');
+      }
+      if (clazz.owner !== user) {
+        throw new ForbiddenException('You do not have permission to access');
+      }
+      grammar.usage = usage;
+      grammar.exampleMeta = JSON.stringify(exampleMeta);
+      await this.grammarRepository.persistAndFlush(grammar);
+      return {
+        id: grammar.id,
+        name: grammar.name,
+        usage: grammar.usage,
+        exampleMeta: JSON.parse(grammar.exampleMeta),
+      };
+    } catch (error) {
+      this.logger.error('Calling updateGrammar()', error, LessonService.name);
+      throw error;
+    }
+  }
+
+  /**
+   * Use for student to mark the item
+   */
+  async markItem(user: User, id: string): Promise<boolean> {
+    try {
+      const vocab = await this.vocabularyRepository.findOne({ id: id });
+      const grammar = await this.grammarRepository.findOne({ id: id });
+      if (!vocab && !grammar) {
+        throw new NotFoundException('Item not found');
+      }
+      const item = vocab ? vocab : grammar;
+
+      if (!item) {
+        throw new NotFoundException('Item not found');
+      }
+
+      const lesson = await this.lessonRepository.findOne(
+        { id: item.lesson.id },
+        { populate: ['class'] },
+      );
+
+      if (!lesson) {
+        throw new NotFoundException('Lesson not found');
+      }
+      const classes = await user.classes.loadItems();
+      if (!classes.some((cls) => cls.id === lesson.class.id)) {
+        throw new ForbiddenException('You do not have permission to access');
+      }
+      const isMarkedBefore = await this.userItemRepository.findOne({
+        userId: user.id,
+        itemId: item.id,
+      });
+
+      if (isMarkedBefore) {
+        await this.userItemRepository.removeAndFlush(isMarkedBefore);
+        return false;
+      } else {
+        const userItem = new UserItem();
+        userItem.id = randomUUID();
+        userItem.itemId = item.id;
+        userItem.userId = user.id;
+        await this.userItemRepository.persistAndFlush(userItem);
+        return true;
+      }
+    } catch (error) {
+      this.logger.error('Calling starItem()', error, LessonService.name);
+      throw error;
+    }
+  }
 }

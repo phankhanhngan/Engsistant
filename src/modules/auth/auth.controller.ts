@@ -18,7 +18,7 @@ import { Response } from 'express';
 import { LoginDto } from './dtos/LoginDto.dto';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { OAuth2Client } from './google_client/google-client.config';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RegisterRoleDto } from './dtos/RegisterRole.dto';
 import { ApiResponseStatus, Role } from 'src/common/enum/common.enum';
@@ -29,6 +29,7 @@ import { plainToInstance } from 'class-transformer';
 import { GoogleLoginTypeDTO } from 'src/common/swagger_types/swagger-type.dto';
 
 @Controller('auth')
+@ApiTags('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -59,10 +60,7 @@ export class AuthController {
       });
     } catch (error) {
       this.logger.error('Calling login()', error, AuthController.name);
-      res.status(500).json({
-        message: `Login failed due to error=${error.message} ${error.stack}`,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 
@@ -111,10 +109,7 @@ export class AuthController {
       });
     } catch (error) {
       this.logger.error('Calling registerRole()', error, AuthController.name);
-      res.status(500).json({
-        message: error.message,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 }

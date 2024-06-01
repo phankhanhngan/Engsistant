@@ -8,6 +8,7 @@ import {
   Logger,
   Param,
   Post,
+  Put,
   Req,
   Res,
   UseGuards,
@@ -23,7 +24,7 @@ import {
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 import { TeacherService } from './teacher.service';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ClassRtnDto } from '../users/dtos/ClassRtn.dto';
 import { GptService } from '../gpt/gpt.service';
 import { ListWordsDto } from './dtos/ListWord.dto';
@@ -41,8 +42,11 @@ import { BuildLessonRequestDto } from '../lesson/dtos/BuildLessonRequest.dto';
 import { grammars, vocabularies } from 'src/common/constants/mock';
 import { separateSentences } from '../../common/utils/utils';
 import { Lesson } from '../../entities/lesson.entity';
+import { UpdateVocabularyDto } from './dtos/UpdateVocabulary.dto';
+import { UpdateGrammarDto } from './dtos/UpdateGrammar.dto';
 
 @Controller('teacher')
+@ApiTags('teacher')
 @UseGuards(JwtAuthGuard)
 export class TeacherController {
   constructor(
@@ -74,10 +78,7 @@ export class TeacherController {
       });
     } catch (error) {
       this.logger.error('Calling listClasses()', error, TeacherController.name);
-      res.status(500).json({
-        message: 'Failed to list classes due to error= ' + error.message,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 
@@ -133,12 +134,7 @@ export class TeacherController {
         error,
         TeacherController.name,
       );
-      res.status(500).json({
-        message:
-          'Failed to list highlight word from gpt due to error= ' +
-          error.message,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 
@@ -233,10 +229,7 @@ export class TeacherController {
       });
     } catch (error) {
       this.logger.error('Calling buildLesson()', error, TeacherController.name);
-      res.status(500).json({
-        message: 'Failed to build lesson due to error= ' + error.message,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 
@@ -246,7 +239,7 @@ export class TeacherController {
   @ApiResponse({
     status: 200,
     type: GetLessonResponse,
-    description: `Get lessons.`,
+    description: `Get lessons by id.`,
   })
   @UseGuards(RoleAuthGuard([Role.TEACHER]))
   async getLesson(@Req() req, @Res() res, @Param('id') lessonId: string) {
@@ -261,10 +254,7 @@ export class TeacherController {
       });
     } catch (error) {
       this.logger.error('Calling getLesson()', error, TeacherController.name);
-      res.status(500).json({
-        message: 'Failed to build lesson due to error= ' + error.message,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 
@@ -274,7 +264,7 @@ export class TeacherController {
   @ApiResponse({
     status: 200,
     type: ListLessonResponse,
-    description: `List lessons.`,
+    description: `List lessons by class id.`,
   })
   @UseGuards(RoleAuthGuard([Role.TEACHER]))
   async listLessons(@Req() req, @Res() res, @Param('classId') classId: string) {
@@ -288,10 +278,81 @@ export class TeacherController {
       });
     } catch (error) {
       this.logger.error('Calling buildLesson()', error, TeacherController.name);
-      res.status(500).json({
-        message: 'Failed to build lesson due to error= ' + error.message,
-        status: ApiResponseStatus.FAILURE,
+      throw error;
+    }
+  }
+
+  @Put('/lessons/vocabularies/update')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: ListLessonResponse,
+    description: `Update vocabulary.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
+  async updateVocabulary(
+    @Req() req,
+    @Res() res,
+    @Body() body: UpdateVocabularyDto,
+  ) {
+    try {
+      const user = req.user;
+      const { id, meaning, examples, antonyms, synonyms } = body;
+      const updatedVocabulary = await this.lessonService.updateVocabulary(
+        user,
+        id,
+        meaning,
+        examples,
+        antonyms,
+        synonyms,
+      );
+      res.status(200).json({
+        message: 'Update vocabulary successfully.',
+        status: ApiResponseStatus.SUCCESS,
+        vocabulary: updatedVocabulary,
       });
+    } catch (error) {
+      this.logger.error(
+        'Calling updateVocabulary()',
+        error,
+        TeacherController.name,
+      );
+      throw error;
+    }
+  }
+
+  @Put('/lessons/grammars/update')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: ListLessonResponse,
+    description: `Update vocabulary.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
+  async updateGrammar(@Req() req, @Res() res, @Body() body: UpdateGrammarDto) {
+    try {
+      const user = req.user;
+      const { id, usage, examples } = body;
+      const updatedGrammar = await this.lessonService.updateGrammar(
+        user,
+        id,
+        usage,
+        examples,
+      );
+      res.status(200).json({
+        message: 'Update grammar successfully.',
+        status: ApiResponseStatus.SUCCESS,
+        grammar: updatedGrammar,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Calling updateVocabulary()',
+        error,
+        TeacherController.name,
+      );
+      throw error;
     }
   }
 }

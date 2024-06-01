@@ -1,5 +1,7 @@
 import { CEFR } from 'src/common/constants/cefr-level';
 import { LessonStatus } from 'src/common/enum/common.enum';
+import { VocabularyDto } from './Vocabulary.dto';
+import { GrammarDto } from './Grammar.dto';
 
 export interface GetLessonResponseDto {
   id: string;
@@ -13,19 +15,6 @@ export interface GetLessonResponseDto {
     id: string;
     name: string;
   };
-  grammars: {
-    id: string;
-    name: string;
-    usage: string;
-    exampleMeta: string[];
-  }[];
-  vocabularies: {
-    id: string;
-    word: string;
-    meaning: string;
-    exampleMeta: string[];
-    antonymMeta: string[];
-    synonymMeta: string[];
-    pronunciationAudio: string;
-  }[];
+  grammars: GrammarDto[];
+  vocabularies: VocabularyDto[];
 }

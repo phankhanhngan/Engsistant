@@ -1,7 +1,6 @@
 import { Entity, ManyToOne, Property, TextType } from '@mikro-orm/core';
 import { BaseUUID } from './baseUUID.enity';
 import { Lesson } from './lesson.entity';
-import { CEFR } from '../common/constants/cefr-level';
 
 @Entity({ tableName: 'grammars' })
 export class Grammar extends BaseUUID {

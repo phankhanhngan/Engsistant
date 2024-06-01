@@ -16,7 +16,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { Response } from 'express';
 import { GoogleClassroomService } from './google-classroom.service';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiResponseStatus, Role } from 'src/common/enum/common.enum';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { ImportClassDto } from './dtos/ImportClass.dto';
@@ -27,6 +27,7 @@ import {
 } from 'src/common/swagger_types/swagger-type.dto';
 
 @Controller('google/classes')
+@ApiTags('google/classes')
 @UseGuards(JwtAuthGuard)
 export class GoogleClassroomController {
   constructor(
@@ -64,10 +65,7 @@ export class GoogleClassroomController {
         error,
         GoogleClassroomController.name,
       );
-      res.status(500).json({
-        message: `authorize failed due to error=${error.message} ${error.stack}`,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 
@@ -95,10 +93,7 @@ export class GoogleClassroomController {
         error,
         GoogleClassroomController.name,
       );
-      res.status(500).json({
-        message: `listClassroom failed due to error=${error.message} ${error.stack}`,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 
@@ -139,10 +134,7 @@ export class GoogleClassroomController {
         error,
         GoogleClassroomController.name,
       );
-      res.status(500).json({
-        message: `Import classes failed due to error=${error.message} ${error.stack}`,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 }

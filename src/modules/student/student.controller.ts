@@ -17,15 +17,18 @@ import { ApiResponseStatus, Role } from 'src/common/enum/common.enum';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 import { UsersService } from '../users/users.service';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ClassRtnDto } from '../users/dtos/ClassRtn.dto';
 import {
+  BaseSwaggerResponseDto,
   GetLessonResponse,
   ListLessonResponse,
+  StudentGetLessonResponse,
 } from 'src/common/swagger_types/swagger-type.dto';
 import { LessonService } from '../lesson/lesson.service';
 
 @Controller('student')
+@ApiTags('student')
 @UseGuards(JwtAuthGuard)
 export class StudentController {
   constructor(
@@ -65,7 +68,7 @@ export class StudentController {
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiResponse({
     status: 200,
-    type: GetLessonResponse,
+    type: StudentGetLessonResponse,
     description: `Get lessons.`,
   })
   @UseGuards(RoleAuthGuard([Role.STUDENT]))
@@ -81,10 +84,7 @@ export class StudentController {
       });
     } catch (error) {
       this.logger.error('Calling getLesson()', error, StudentController.name);
-      res.status(500).json({
-        message: 'Failed to get lesson due to error= ' + error.message,
-        status: ApiResponseStatus.FAILURE,
-      });
+      throw error;
     }
   }
 
@@ -108,10 +108,31 @@ export class StudentController {
       });
     } catch (error) {
       this.logger.error('Calling listLessons()', error, StudentController.name);
-      res.status(500).json({
-        message: 'Failed to list lessons due to error= ' + error.message,
-        status: ApiResponseStatus.FAILURE,
+      throw error;
+    }
+  }
+
+  @Get('/lessons/items/:id/mark')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: BaseSwaggerResponseDto,
+    description: `Mark/unmark lesson item.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.STUDENT]))
+  async markLessonItem(@Req() req, @Res() res, @Param('id') itemId: string) {
+    try {
+      const user = req.user;
+      const isItemMarked = await this.lessonService.markItem(user, itemId);
+      const message = isItemMarked ? 'Marked' : 'Unmarked';
+      res.status(200).json({
+        message: `${message} lesson item successfully.`,
+        status: ApiResponseStatus.SUCCESS,
       });
+    } catch (error) {
+      this.logger.error('Calling listLessons()', error, StudentController.name);
+      throw error;
     }
   }
 }

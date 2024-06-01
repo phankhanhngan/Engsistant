@@ -10,6 +10,7 @@ import { Lesson } from 'src/entities/lesson.entity';
 import { Vocabulary } from 'src/entities/vocabulary.entity';
 import { Grammar } from 'src/entities/grammar.entity';
 import { DictionaryService } from '../dict/dictionary.service';
+import { UserItem } from 'src/entities/userItem.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { DictionaryService } from '../dict/dictionary.service';
     MikroOrmModule.forFeature([Lesson]),
     MikroOrmModule.forFeature([Vocabulary]),
     MikroOrmModule.forFeature([Grammar]),
+    MikroOrmModule.forFeature([UserItem]),
   ],
   controllers: [TeacherController],
   providers: [TeacherService, GptService, LessonService, DictionaryService],

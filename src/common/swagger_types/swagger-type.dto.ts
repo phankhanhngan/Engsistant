@@ -4,7 +4,7 @@ import { GoogleClassroomInfoDto } from 'src/modules/google_classroom/dtos/Google
 import { User } from 'src/entities';
 import { UserRtnDto } from 'src/modules/auth/dtos/UserRtnDto.dto';
 
-class BaseSwaggerResponseDto {
+export class BaseSwaggerResponseDto {
   status: ApiResponseStatus;
   message: string;
 }
@@ -105,4 +105,46 @@ export class AdminListUsers extends BaseSwaggerResponseDto {
 
 export class AdminUpdateUser extends BaseSwaggerResponseDto {
   users: UserRtnDto;
+}
+
+export class UpdateVocabularyResponse extends BaseSwaggerResponseDto {
+  vocabulary: VocabularyDto;
+}
+
+export class StudentGrammarDto {
+  id: string;
+  name: string;
+  usage: string;
+  exampleMeta: string[];
+  isMarked: boolean;
+}
+
+export class StudentVocabularyDto {
+  id: string;
+  word: string;
+  meaning: string;
+  exampleMeta: string[];
+  antonymMeta: string[];
+  synonymMeta: string[];
+  pronunciationAudio: string;
+  pronunciationWritten: string;
+  functionalLabel: string;
+  isMarked: boolean;
+}
+
+export class StudentLessonDto {
+  id: string;
+  sharedLink?: string;
+  description?: string;
+  name: string;
+  level: CEFR;
+  class: {
+    id: string;
+    name: string;
+  };
+  grammars: GrammarDto[];
+  vocabularies: VocabularyDto[];
+}
+export class StudentGetLessonResponse extends BaseSwaggerResponseDto {
+  lesson: StudentLessonDto;
 }
