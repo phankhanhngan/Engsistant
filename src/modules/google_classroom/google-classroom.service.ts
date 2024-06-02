@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { google } from 'googleapis';
-import { randomInt, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 import { User } from 'src/entities';
 import { GoogleClassroomInfoDto } from './dtos/GoogleClassroomInfo.dto';
 import { ImportClassInfoDto } from './dtos/ImportClass.dto';
@@ -12,9 +12,10 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { Role } from 'src/common/enum/common.enum';
 import { generatePastelColor } from 'src/common/utils/utils';
 import { MailerService } from '@nest-modules/mailer';
-import axios from 'axios';
 import { OAuth2Client } from 'google-auth-library';
 import { generatePhoto } from '../pexels/pexels.service';
+import { Lesson } from 'src/entities/lesson.entity';
+import { Readable } from 'stream';
 
 @Injectable()
 export class GoogleClassroomService {
@@ -52,6 +53,7 @@ export class GoogleClassroomService {
         'https://www.googleapis.com/auth/classroom.profile.emails',
         'https://www.googleapis.com/auth/classroom.profile.photos',
         'https://www.googleapis.com/auth/classroom.rosters',
+        'https://www.googleapis.com/auth/drive',
       ];
 
       // Generate a secure random state value.
@@ -214,6 +216,9 @@ export class GoogleClassroomService {
             },
             { populate: ['classes'] },
           );
+          if (!existingUser) {
+            return;
+          }
           const classes = await existingUser.classes.loadItems();
 
           if (existingUser?.id == null) {
@@ -266,6 +271,93 @@ export class GoogleClassroomService {
     } catch (err) {
       this.logger.error(
         'Calling importClassroomData()',
+        err,
+        GoogleClassroomService.name,
+      );
+      throw err;
+    }
+  }
+
+  async uploadFileToDrive(user: User, file: Express.Multer.File) {
+    try {
+      this.oAuth2Client.setCredentials({
+        refresh_token: user.googleRefreshToken,
+      });
+
+      const drive = google.drive({
+        version: 'v3',
+        auth: this.oAuth2Client,
+      });
+
+      const response = await drive.files.create({
+        requestBody: {
+          name: `${file.originalname}-${randomUUID()}`,
+          mimeType: file.mimetype,
+        },
+        media: {
+          mimeType: file.mimetype,
+          body: Readable.from(file.buffer),
+        },
+      });
+
+      return {
+        id: response.data.id,
+        title: response.data.name,
+        link: response.data.webViewLink,
+      };
+    } catch (err) {
+      this.logger.error(
+        'Calling uploadFileToDrive()',
+        err,
+        GoogleClassroomService.name,
+      );
+      throw err;
+    }
+  }
+
+  async shareLesson(
+    user: User,
+    lesson: Lesson,
+    googleCourseId: string,
+    file: Express.Multer.File,
+  ): Promise<string> {
+    try {
+      // Upload the file to Google Drive
+      const driveFile = await this.uploadFileToDrive(user, file);
+
+      // Share the file to Google Classroom
+      this.oAuth2Client.setCredentials({
+        refresh_token: user.googleRefreshToken,
+      });
+
+      const classroom = google.classroom({
+        version: 'v1',
+        auth: this.oAuth2Client,
+      });
+
+      const response = await classroom.courses.courseWorkMaterials.create({
+        courseId: googleCourseId,
+        requestBody: {
+          title: lesson.name,
+          description: lesson.description,
+          materials: [
+            {
+              driveFile: {
+                driveFile: {
+                  id: driveFile.id,
+                  title: driveFile.title,
+                  alternateLink: driveFile.link,
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      return response.data.alternateLink;
+    } catch (err) {
+      this.logger.error(
+        'Calling shareLesson()',
         err,
         GoogleClassroomService.name,
       );

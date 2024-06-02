@@ -30,6 +30,7 @@ import e from 'express';
 import { UserItem } from 'src/entities/userItem.entity';
 import { StudentGetLessonResponseDto } from './dtos/StudentGetLessonResponse.dto';
 import { generatePhoto } from '../pexels/pexels.service';
+import { GoogleClassroomService } from '../google_classroom/google-classroom.service';
 
 @Injectable()
 export class LessonService {
@@ -47,6 +48,7 @@ export class LessonService {
     private userItemRepository: EntityRepository<UserItem>,
     private readonly gptService: GptService,
     private readonly dictionaryService: DictionaryService,
+    private readonly googleClassroomService: GoogleClassroomService,
   ) {}
 
   async buildLesson(
@@ -59,6 +61,7 @@ export class LessonService {
     paragraph: string,
   ): Promise<Lesson> {
     try {
+      console.log('Start building lesson for classId:', classId);
       // Store the lesson into db
       const clazz = await this.classRepository.findOne({ id: classId });
 
@@ -86,6 +89,7 @@ export class LessonService {
       );
 
       // Store vocabulary into db
+      console.log('... building lesson meta');
       const vocabBuild = await Promise.all(
         dictMetaData.map(async (vocabulary) => {
           const vocab = new Vocabulary();
@@ -115,6 +119,7 @@ export class LessonService {
       await this.vocabularyRepository.persistAndFlush(vocabBuild);
 
       // Call gpt to get grammar features/ usage, example
+      console.log('... building grammar meta');
       const grammarMetaFromGpt = await this.gptService.getGrammarMeta(
         level,
         grammars,
@@ -239,6 +244,42 @@ export class LessonService {
       };
     } catch (error) {
       this.logger.error('Calling getLesson()', error, LessonService.name);
+      throw error;
+    }
+  }
+
+  async shareLesson(
+    user: User,
+    lessonId: string,
+    file: Express.Multer.File,
+  ): Promise<boolean> {
+    try {
+      const lesson = await this.lessonRepository.findOne(
+        {
+          id: lessonId,
+        },
+        { populate: ['class'] },
+      );
+
+      if (!lesson) {
+        throw new NotFoundException('Lesson not found');
+      }
+      const clazz = lesson.class;
+
+      if (clazz.owner !== user) {
+        throw new ForbiddenException('You do not have permission to access');
+      }
+      const sharedLink = await this.googleClassroomService.shareLesson(
+        user,
+        lesson,
+        clazz.googleCourseId,
+        file,
+      );
+      lesson.sharedLink = sharedLink;
+      await this.lessonRepository.flush();
+      return true;
+    } catch (error) {
+      this.logger.error('Calling shareLesson()', error, LessonService.name);
       throw error;
     }
   }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -7,11 +8,14 @@ import {
   Inject,
   Logger,
   Param,
+  ParseFilePipe,
   Post,
   Put,
   Req,
   Res,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -49,6 +53,9 @@ import { UpdateVocabularyDto } from './dtos/UpdateVocabulary.dto';
 import { UpdateGrammarDto } from './dtos/UpdateGrammar.dto';
 import { DeleteVocabularyDto } from './dtos/DeleteVocabulary.dto';
 import { DeleteGrammarDto } from './dtos/DeleteGrammar.dto';
+import { MailerService } from '@nest-modules/mailer';
+import { fileFilter } from '../users/helpers/file-filter.helper';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('teacher')
 @ApiTags('teacher')
@@ -61,6 +68,7 @@ export class TeacherController {
     @InjectRepository(Class)
     private readonly classRepository: EntityRepository<Class>,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    private readonly mailerService: MailerService,
   ) {}
 
   @Get('/classes')
@@ -191,6 +199,24 @@ export class TeacherController {
               lesson.id,
               LessonStatus.READY,
             );
+            await this.mailerService
+              .sendMail({
+                to: user.email,
+                subject: 'Lesson is ready',
+                template: 'lesson_ready',
+                context: {
+                  teacherName: user.name,
+                  lessonName: `${lesson.name} mock`,
+                  className: clazz.name,
+                  lessonLink:
+                    process.env.CLIENT_URL + '/my-lesson/' + lesson.id,
+                },
+              })
+              .then(() => {
+                console.log(
+                  `Sent email to teacher ${user.email} for lesson ${lesson.id}`,
+                );
+              });
             console.log('build mock lesson done');
           });
         return res.status(200).json({
@@ -219,8 +245,23 @@ export class TeacherController {
             lesson.id,
             LessonStatus.READY,
           );
-          // send mail
-          // push noti
+          await this.mailerService
+            .sendMail({
+              to: user.email,
+              subject: 'Lesson is ready',
+              template: 'lesson_ready',
+              context: {
+                teacherName: user.name,
+                lessonName: lesson.name,
+                className: clazz.name,
+                lessonLink: process.env.CLIENT_URL + '/my-lesson/' + lesson.id,
+              },
+            })
+            .then(() => {
+              console.log(
+                `Sent email to teacher ${user.email} for lesson ${lesson.id}`,
+              );
+            });
           console.log('build lesson done');
         });
 
@@ -259,6 +300,44 @@ export class TeacherController {
       });
     } catch (error) {
       this.logger.error('Calling getLesson()', error, TeacherController.name);
+      throw error;
+    }
+  }
+
+  @Post('/lessons/:id/share')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: BaseSwaggerResponseDto,
+    description: `Share lesson file to Google classroom as material.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
+  @UseInterceptors(FilesInterceptor('file', 1, fileFilter))
+  async shareLesson(
+    @Req() req,
+    @Res() res,
+    @Param('id') lessonId: string,
+    @UploadedFiles(new ParseFilePipe({}))
+    files: Array<Express.Multer.File>,
+  ) {
+    try {
+      const user = req.user;
+      if (files.length !== 1) {
+        throw new BadRequestException('Only one file is allowed');
+      }
+      const file = files[0];
+      if (!file) {
+        throw new BadRequestException('No file found');
+      }
+      await this.lessonService.shareLesson(user, lessonId, file);
+
+      res.status(200).json({
+        message: 'Lesson shared successfully.',
+        status: ApiResponseStatus.SUCCESS,
+      });
+    } catch (error) {
+      this.logger.error('Calling shareLesson()', error, TeacherController.name);
       throw error;
     }
   }

@@ -331,7 +331,7 @@
                                       '
                                     >
                                       Hi,
-                                      {{studentName}}!
+                                      {{teacherName}}!
                                     </h3>
                                     <p
                                       style='
@@ -375,18 +375,23 @@
                                         font-size: 18px;
                                       '
                                     >
-                                      {{teacherName}}
-                                      has invited you to join class
-                                      {{className}}
-                                      on Engsistant. Please click on the button
-                                      below to join the class.
+                                      Your lesson
+                                      <span
+                                        style='color: #d15700;'
+                                      >{{lessonName}}</span>
+                                      at
+                                      <span
+                                        style='color: #d15700;'
+                                      >{{className}}</span>
+                                      is ready. Please click on the button below
+                                      to view the lesson.
                                     </p>
 
                                     <a
-                                      href='{{joinLink}}'
+                                      href='{{lessonLink}}'
                                       style='color: #ffffff;  background: #0d7490; padding: 6px; border-radius: 6px; margin-bottom: 14px; text-decoration: none;'
                                     >
-                                      Join Class
+                                      View lesson
                                     </a>
 
                                     <p
@@ -548,9 +553,9 @@
                                               font-size: 16px;
                                             '
                                             >
-                                              Please ignore this email if you do
-                                              not know the class or teacher. If
-                                              you have questions,
+                                              Please ignore this email if the
+                                              information is not related. In
+                                              case you have questions,
                                               <a
                                                 target='_blank'
                                                 style='
@@ -613,7 +618,6 @@
                       width: 600px;
                     '
                   >
-
                     <tr>
                       <td
                         class='esdev-adapt-off'
@@ -638,93 +642,6 @@
                             width: 520px;
                           '
                         >
-                          <tr>
-                            <td
-                              class='esdev-mso-td'
-                              valign='top'
-                              style='padding: 0; margin: 0'
-                            >
-                              <table
-                                cellpadding='0'
-                                cellspacing='0'
-                                align='left'
-                                class='es-left'
-                                style='
-                                  mso-table-lspace: 0pt;
-                                  mso-table-rspace: 0pt;
-                                  border-collapse: collapse;
-                                  border-spacing: 0px;
-                                  float: left;
-                                '
-                              >
-                                <tr>
-                                  <td
-                                    align='center'
-                                    valign='top'
-                                    style='padding: 0; margin: 0; width: 47px'
-                                  >
-                                    <table
-                                      cellpadding='0'
-                                      cellspacing='0'
-                                      width='100%'
-                                      role='presentation'
-                                      style='
-                                        mso-table-lspace: 0pt;
-                                        mso-table-rspace: 0pt;
-                                        border-collapse: collapse;
-                                        border-spacing: 0px;
-                                      '
-                                    >
-                                    </table>
-
-                                  </td>
-
-                                </tr>
-                              </table>
-                            </td>
-                            <td style='padding: 0; margin: 0; width: 20px'></td>
-                            <td
-                              class='esdev-mso-td'
-                              valign='top'
-                              style='padding: 0; margin: 0'
-                            >
-                              <table
-                                cellpadding='0'
-                                cellspacing='0'
-                                class='es-right'
-                                align='right'
-                                style='
-                                  mso-table-lspace: 0pt;
-                                  mso-table-rspace: 0pt;
-                                  border-collapse: collapse;
-                                  border-spacing: 0px;
-                                  float: right;
-                                '
-                              >
-                                <tr>
-                                  <td
-                                    align='center'
-                                    valign='top'
-                                    style='padding: 0; margin: 0; width: 453px'
-                                  >
-                                    <table
-                                      cellpadding='0'
-                                      cellspacing='0'
-                                      width='100%'
-                                      role='presentation'
-                                      style='
-                                        mso-table-lspace: 0pt;
-                                        mso-table-rspace: 0pt;
-                                        border-collapse: collapse;
-                                        border-spacing: 0px;
-                                      '
-                                    >
-                                    </table>
-                                  </td>
-                                </tr>
-                              </table>
-                            </td>
-                          </tr>
                         </table>
                       </td>
                     </tr>

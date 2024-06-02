@@ -11,6 +11,7 @@ import { Vocabulary } from 'src/entities/vocabulary.entity';
 import { Grammar } from 'src/entities/grammar.entity';
 import { DictionaryService } from '../dict/dictionary.service';
 import { UserItem } from 'src/entities/userItem.entity';
+import { GoogleClassroomService } from '../google_classroom/google-classroom.service';
 
 @Module({
   imports: [
@@ -22,6 +23,12 @@ import { UserItem } from 'src/entities/userItem.entity';
     MikroOrmModule.forFeature([UserItem]),
   ],
   controllers: [TeacherController],
-  providers: [TeacherService, GptService, LessonService, DictionaryService],
+  providers: [
+    TeacherService,
+    GptService,
+    LessonService,
+    DictionaryService,
+    GoogleClassroomService,
+  ],
 })
 export class TeacherModule {}

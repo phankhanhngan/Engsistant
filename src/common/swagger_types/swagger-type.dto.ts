@@ -1,5 +1,5 @@
 import { CEFR } from 'src/common/constants/cefr-level';
-import { ApiResponseStatus, Role } from '../enum/common.enum';
+import { ApiResponseStatus } from '../enum/common.enum';
 import { GoogleClassroomInfoDto } from 'src/modules/google_classroom/dtos/GoogleClassroomInfo.dto';
 import { User } from 'src/entities';
 import { UserRtnDto } from 'src/modules/auth/dtos/UserRtnDto.dto';

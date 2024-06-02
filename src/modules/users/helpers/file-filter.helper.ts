@@ -4,7 +4,7 @@ import * as mime from 'mime-types';
 const fileFilter = {
   fileFilter: (req, file, cb) => {
     const ext: string = mime.extension(file.mimetype).toString();
-    if (!['png', 'jpg', 'jpeg'].includes(ext)) {
+    if (!['pdf'].includes(ext)) {
       return cb(new BadRequestException('Extension not allowed'), false);
     }
     return cb(null, true);

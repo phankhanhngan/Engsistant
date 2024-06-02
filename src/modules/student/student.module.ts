@@ -12,6 +12,7 @@ import { Grammar } from 'src/entities/grammar.entity';
 import { GptService } from '../gpt/gpt.service';
 import { DictionaryService } from '../dict/dictionary.service';
 import { UserItem } from 'src/entities/userItem.entity';
+import { GoogleClassroomService } from '../google_classroom/google-classroom.service';
 
 @Module({
   imports: [
@@ -24,6 +25,12 @@ import { UserItem } from 'src/entities/userItem.entity';
     UsersModule,
   ],
   controllers: [StudentController],
-  providers: [StudentService, LessonService, GptService, DictionaryService],
+  providers: [
+    StudentService,
+    LessonService,
+    GptService,
+    DictionaryService,
+    GoogleClassroomService,
+  ],
 })
 export class StudentModule {}
