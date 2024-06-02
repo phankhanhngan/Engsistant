@@ -93,14 +93,18 @@ export class LessonService {
             vocabulary.word,
             vocabulary.functionalLabel,
           );
+          const audio = vocabDict?.audio ? vocabDict.audio : null;
+          const pronunciationWritten = vocabDict?.pronunciationWritten
+            ? vocabDict.pronunciationWritten
+            : null;
           vocab.id = randomUUID();
           vocab.word = vocabulary.word;
           vocab.meaning = vocabulary.meaning;
           vocab.exampleMeta = JSON.stringify(vocabulary.examples);
           vocab.antonymMeta = JSON.stringify(vocabulary.antonyms);
           vocab.synonymMeta = JSON.stringify(vocabulary.synonyms);
-          vocab.pronunciationAudio = vocabDict.audio;
-          vocab.pronunciationWritten = vocabDict.pronunciationWritten;
+          vocab.pronunciationAudio = audio;
+          vocab.pronunciationWritten = pronunciationWritten;
           vocab.level = level;
           vocab.lesson = lesson;
           vocab.functionalLabel = vocabulary.functionalLabel;
