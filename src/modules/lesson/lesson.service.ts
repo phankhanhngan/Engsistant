@@ -472,6 +472,40 @@ export class LessonService {
     }
   }
 
+  async deleteVocabulary(user: User, id: string): Promise<boolean> {
+    try {
+      const vocabulary = await this.vocabularyRepository.findOne({ id: id });
+      if (!vocabulary) {
+        throw new NotFoundException('Vocabulary not found');
+      }
+      // check if the user is the owner of the class having lessons with that vocabulary
+      const lessonId = vocabulary.lesson.id;
+      const lesson = await this.lessonRepository.findOne(
+        { id: lessonId },
+        { populate: ['class'] },
+      );
+      if (!lesson) {
+        throw new NotFoundException('Lesson not found');
+      }
+      const clazz = lesson.class;
+      if (!clazz) {
+        throw new NotFoundException('Class not found');
+      }
+      if (clazz.owner !== user) {
+        throw new ForbiddenException('You do not have permission to access');
+      }
+      await this.vocabularyRepository.removeAndFlush(vocabulary);
+      return true;
+    } catch (error) {
+      this.logger.error(
+        'Calling DeleteVocabularyDto()',
+        error,
+        LessonService.name,
+      );
+      throw error;
+    }
+  }
+
   async updateGrammar(
     user: User,
     id: string,
@@ -507,6 +541,36 @@ export class LessonService {
       };
     } catch (error) {
       this.logger.error('Calling updateGrammar()', error, LessonService.name);
+      throw error;
+    }
+  }
+
+  async deleteGrammar(user: User, id: string): Promise<boolean> {
+    try {
+      const grammar = await this.grammarRepository.findOne({ id: id });
+      if (!grammar) {
+        throw new NotFoundException('Grammar not found');
+      }
+      // check if the user is the owner of the class having lessons with that grammar
+      const lessonId = grammar.lesson.id;
+      const lesson = await this.lessonRepository.findOne(
+        { id: lessonId },
+        { populate: ['class'] },
+      );
+      if (!lesson) {
+        throw new NotFoundException('Lesson not found');
+      }
+      const clazz = lesson.class;
+      if (!clazz) {
+        throw new NotFoundException('Class not found');
+      }
+      if (clazz.owner !== user) {
+        throw new ForbiddenException('You do not have permission to access');
+      }
+      await this.grammarRepository.removeAndFlush(grammar);
+      return true;
+    } catch (error) {
+      this.logger.error('Calling deleteGrammar()', error, LessonService.name);
       throw error;
     }
   }

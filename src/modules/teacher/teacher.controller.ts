@@ -33,6 +33,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { Class } from 'src/entities/class.entity';
 import { EntityRepository } from '@mikro-orm/core';
 import {
+  BaseSwaggerResponseDto,
   BuildLessonResponseDto,
   GetLessonResponse,
   LessonRecommendSwaggerDto,
@@ -46,6 +47,8 @@ import { separateSentences } from '../../common/utils/utils';
 import { Lesson } from '../../entities/lesson.entity';
 import { UpdateVocabularyDto } from './dtos/UpdateVocabulary.dto';
 import { UpdateGrammarDto } from './dtos/UpdateGrammar.dto';
+import { DeleteVocabularyDto } from './dtos/DeleteVocabulary.dto';
+import { DeleteGrammarDto } from './dtos/DeleteGrammar.dto';
 
 @Controller('teacher')
 @ApiTags('teacher')
@@ -324,6 +327,38 @@ export class TeacherController {
     }
   }
 
+  @Put('/lessons/vocabularies/delete')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: BaseSwaggerResponseDto,
+    description: `Update vocabulary.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
+  async deleteVocabulary(
+    @Req() req,
+    @Res() res,
+    @Body() body: DeleteVocabularyDto,
+  ) {
+    try {
+      const user = req.user;
+      const { id } = body;
+      await this.lessonService.deleteVocabulary(user, id);
+      res.status(200).json({
+        message: 'Delete vocabulary successfully.',
+        status: ApiResponseStatus.SUCCESS,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Calling deleteVocabulary()',
+        error,
+        TeacherController.name,
+      );
+      throw error;
+    }
+  }
+
   @Put('/lessons/grammars/update')
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe({ transform: true }))
@@ -350,7 +385,35 @@ export class TeacherController {
       });
     } catch (error) {
       this.logger.error(
-        'Calling updateVocabulary()',
+        'Calling updateGrammar()',
+        error,
+        TeacherController.name,
+      );
+      throw error;
+    }
+  }
+
+  @Put('/lessons/grammars/delete')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  @ApiResponse({
+    status: 200,
+    type: BaseSwaggerResponseDto,
+    description: `Update vocabulary.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
+  async deleteGrammar(@Req() req, @Res() res, @Body() body: DeleteGrammarDto) {
+    try {
+      const user = req.user;
+      const { id } = body;
+      await this.lessonService.deleteGrammar(user, id);
+      res.status(200).json({
+        message: 'Delete grammar successfully.',
+        status: ApiResponseStatus.SUCCESS,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Calling deleteGrammar()',
         error,
         TeacherController.name,
       );
