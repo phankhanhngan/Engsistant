@@ -37,6 +37,8 @@ import {
   GetLessonResponse,
   LessonRecommendSwaggerDto,
   ListLessonResponse,
+  UpdateGrammarResponse,
+  UpdateVocabularyResponse,
 } from 'src/common/swagger_types/swagger-type.dto';
 import { BuildLessonRequestDto } from '../lesson/dtos/BuildLessonRequest.dto';
 import { grammars, vocabularies } from 'src/common/constants/mock';
@@ -287,7 +289,7 @@ export class TeacherController {
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiResponse({
     status: 200,
-    type: ListLessonResponse,
+    type: UpdateVocabularyResponse,
     description: `Update vocabulary.`,
   })
   @UseGuards(RoleAuthGuard([Role.TEACHER]))
@@ -327,7 +329,7 @@ export class TeacherController {
   @UsePipes(new ValidationPipe({ transform: true }))
   @ApiResponse({
     status: 200,
-    type: ListLessonResponse,
+    type: UpdateGrammarResponse,
     description: `Update vocabulary.`,
   })
   @UseGuards(RoleAuthGuard([Role.TEACHER]))

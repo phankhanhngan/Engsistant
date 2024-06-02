@@ -151,3 +151,7 @@ export class StudentLessonDto {
 export class StudentGetLessonResponse extends BaseSwaggerResponseDto {
   lesson: StudentLessonDto;
 }
+
+export class UpdateGrammarResponse extends BaseSwaggerResponseDto {
+  grammar: GrammarDto;
+}
