@@ -194,7 +194,6 @@ export class GoogleClassroomService {
           });
         }),
       );
-
       const studentInfos = studentsResponse?.flatMap((studentResponse) => {
         return (
           studentResponse.data?.students?.map((student) => {
@@ -216,18 +215,26 @@ export class GoogleClassroomService {
             },
             { populate: ['classes'] },
           );
-          if (!existingUser) {
-            return;
-          }
-          const classes = await existingUser.classes.loadItems();
 
-          if (existingUser?.id == null) {
-            existingUser.id = randomUUID();
-            existingUser.email = student.email;
-            existingUser.role = Role.STUDENT;
-            existingUser.name = student.name;
-            this.userRepository.persist(existingUser);
+          let currentStudent;
+          if (existingUser != null && existingUser?.id != null) {
+            currentStudent = existingUser;
+          } else {
+            currentStudent = new User();
+            currentStudent.id = randomUUID();
+            currentStudent.email = student.email;
+            currentStudent.role = Role.STUDENT;
+            currentStudent.name = student.name;
+            this.userRepository.persistAndFlush(currentStudent);
           }
+
+          currentStudent = await this.userRepository.findOne(
+            {
+              email: student.email,
+            },
+            { populate: ['classes'] },
+          );
+          const classes = await currentStudent.classes.loadItems();
 
           // Check if the student is already in the class
           const existingClass = await this.classRepository.findOne({
@@ -235,7 +242,7 @@ export class GoogleClassroomService {
           });
 
           if (!classes.includes(existingClass)) {
-            existingUser.classes.add(existingClass);
+            currentStudent.classes.add(existingClass);
           }
         }),
       );

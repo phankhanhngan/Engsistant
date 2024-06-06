@@ -21,5 +21,12 @@ export class ClassRtnDto {
   @ApiProperty()
   students?: User[];
   @ApiProperty()
+  lessons?: {
+    id: string;
+    name: string;
+    description: string;
+    cover: string;
+  }[];
+  @ApiProperty()
   cover: string;
 }

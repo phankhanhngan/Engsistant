@@ -10,7 +10,7 @@ export class Grammar extends BaseUUID {
   @Property({ nullable: false })
   name!: string;
 
-  @Property({ nullable: false })
+  @Property({ nullable: false, type: TextType })
   usage!: string;
 
   @Property({ type: TextType, nullable: false })

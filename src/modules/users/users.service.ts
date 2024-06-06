@@ -11,6 +11,7 @@ import { plainToClass } from 'class-transformer';
 import { UserRtnDto } from '../auth/dtos/UserRtnDto.dto';
 import { Class } from 'src/entities/class.entity';
 import { ClassRtnDto } from './dtos/ClassRtn.dto';
+import { Role } from '../../common/enum/common.enum';
 
 @Injectable()
 export class UsersService {
@@ -142,17 +143,37 @@ export class UsersService {
     try {
       const classes = await user.classes.loadItems();
       return (
-        classes?.map((cls) => ({
-          id: cls.id,
-          name: cls.name,
-          description: cls.description,
-          descriptionHeading: cls.descriptionHeading,
-          alternativeLink: cls.alternativeLink,
-          driveLink: cls.driveLink,
-          googleCourseId: cls.googleCourseId,
-          color: cls.color,
-          cover: cls.cover,
-        })) ?? []
+        (await Promise.all(
+          classes?.map(async (c) => {
+            const students = await this.userRepository.find(
+              {
+                classes: c,
+                role: Role.STUDENT,
+              },
+              { fields: ['id', 'name', 'email', 'photo'] },
+            );
+            const lessons = await c.lessons.loadItems();
+
+            const classRtnDto = new ClassRtnDto();
+            classRtnDto.id = c.id;
+            classRtnDto.name = c.name;
+            classRtnDto.students = students;
+            classRtnDto.description = c.description;
+            classRtnDto.descriptionHeading = c.descriptionHeading;
+            classRtnDto.alternativeLink = c.alternativeLink;
+            classRtnDto.color = c.color;
+            classRtnDto.driveLink = c.driveLink;
+            classRtnDto.googleCourseId = c.googleCourseId;
+            classRtnDto.lessons = lessons.map((l) => ({
+              id: l.id,
+              name: l.name,
+              description: l.description,
+              cover: l.cover,
+            }));
+            classRtnDto.cover = c.cover;
+            return classRtnDto;
+          }),
+        )) ?? []
       );
     } catch (error) {
       this.logger.error('Calling listClasses()', error, UsersService.name);

@@ -89,7 +89,8 @@ export class LessonService {
       );
 
       // Store vocabulary into db
-      console.log('... building lesson meta');
+      console.log('Building lesson meta ...');
+
       const vocabBuild = await Promise.all(
         dictMetaData.map(async (vocabulary) => {
           const vocab = new Vocabulary();
@@ -129,7 +130,7 @@ export class LessonService {
         const grammar = new Grammar();
         grammar.id = randomUUID();
         grammar.name = gr.grammar;
-        grammar.usage = gr.usage;
+        grammar.usage = JSON.stringify(gr.usage);
         grammar.exampleMeta = JSON.stringify(gr.example);
         grammar.lesson = lesson;
         return grammar;
@@ -287,6 +288,9 @@ export class LessonService {
   async listLessons(
     classId: string,
     user: User,
+    level: CEFR | 'ALL',
+    search?: string,
+    status?: LessonStatus | 'ALL',
   ): Promise<ListLessonResponseDto[]> {
     try {
       if (user.role === Role.TEACHER) {
@@ -304,14 +308,22 @@ export class LessonService {
           throw new ForbiddenException('You do not have permission to access');
         }
       }
-      const lessons = await this.lessonRepository.find(
-        {
-          class: {
-            id: classId,
-          },
+      const findFilter = {
+        class: {
+          id: classId,
         },
-        { populate: ['class'] },
-      );
+      };
+
+      level && level !== 'ALL' ? (findFilter['level'] = level) : null;
+      search && search !== ''
+        ? (findFilter['name'] = { $like: `%${search}%` })
+        : null;
+      status && status !== 'ALL' ? (findFilter['status'] = status) : null;
+
+      const lessons = await this.lessonRepository.find(findFilter, {
+        populate: ['class'],
+        orderBy: { created_at: 'DESC' },
+      });
 
       if (lessons == null || lessons.length < 1) {
         return [];

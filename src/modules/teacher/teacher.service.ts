@@ -20,28 +20,38 @@ export class TeacherService {
   async listClasses(user: User): Promise<ClassRtnDto[]> {
     try {
       const classes = await this.classRepository.find({ owner: user });
-      const students = await this.userRepository.find(
-        {
-          classes: { $in: classes },
-          role: Role.STUDENT,
-        },
-        { fields: ['id', 'name', 'email', 'photo'] },
-      );
+
       const classesMap =
-        classes?.map((c) => {
-          const classRtnDto = new ClassRtnDto();
-          classRtnDto.id = c.id;
-          classRtnDto.name = c.name;
-          classRtnDto.students = students;
-          classRtnDto.description = c.description;
-          classRtnDto.descriptionHeading = c.descriptionHeading;
-          classRtnDto.alternativeLink = c.alternativeLink;
-          classRtnDto.color = c.color;
-          classRtnDto.driveLink = c.driveLink;
-          classRtnDto.googleCourseId = c.googleCourseId;
-          classRtnDto.cover = c.cover;
-          return classRtnDto;
-        }) ?? [];
+        (await Promise.all(
+          classes?.map(async (c) => {
+            const students = await this.userRepository.find(
+              {
+                classes: c,
+                role: Role.STUDENT,
+              },
+              { fields: ['id', 'name', 'email', 'photo'] },
+            );
+            const lessons = await c.lessons.loadItems();
+            const classRtnDto = new ClassRtnDto();
+            classRtnDto.id = c.id;
+            classRtnDto.name = c.name;
+            classRtnDto.students = students;
+            classRtnDto.description = c.description;
+            classRtnDto.descriptionHeading = c.descriptionHeading;
+            classRtnDto.alternativeLink = c.alternativeLink;
+            classRtnDto.color = c.color;
+            classRtnDto.driveLink = c.driveLink;
+            classRtnDto.googleCourseId = c.googleCourseId;
+            classRtnDto.lessons = lessons.map((l) => ({
+              id: l.id,
+              name: l.name,
+              description: l.description,
+              cover: l.cover,
+            }));
+            classRtnDto.cover = c.cover;
+            return classRtnDto;
+          }),
+        )) ?? [];
 
       return classesMap;
     } catch (error) {

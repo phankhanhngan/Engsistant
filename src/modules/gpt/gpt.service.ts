@@ -18,6 +18,7 @@ import { VocabularyGenerateMetaDto } from './dtos/VocabularyGenerateMetaDto.dto'
 @Injectable()
 export class GptService {
   private gptClient: OpenAI;
+  private model = 'gpt-3.5-turbo';
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {
@@ -27,7 +28,7 @@ export class GptService {
   async getHighlightedWords(paragraph: string, level: CEFR): Promise<string[]> {
     try {
       const response = await this.gptClient.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: this.model,
         messages: [
           {
             role: 'system',
@@ -73,8 +74,11 @@ export class GptService {
         )
         .map((sentence) => sentence.sentence);
 
+      if (filteredSentences.length == 0) {
+        return [];
+      }
       const response = await this.gptClient.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: this.model,
         messages: [
           {
             role: 'system',
@@ -117,12 +121,16 @@ export class GptService {
     grammars: string[],
   ): Promise<GrammarMetaDto[]> {
     try {
+      console.log('Start get grammar meta');
+      if (grammars.length == 0) return [];
+      const prompt = grammarMetaPrompt(level, grammars);
+
       const response = await this.gptClient.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: this.model,
         messages: [
           {
             role: 'system',
-            content: grammarMetaPrompt(level, grammars),
+            content: prompt,
           },
         ],
       });
@@ -132,6 +140,8 @@ export class GptService {
       }
       grammarMeta = JSON.parse(response.choices[0].message.content);
       if (grammarMeta.length == 0) return [];
+      console.log('Done get grammar meta');
+
       return grammarMeta.map((el) => ({
         grammar: el.grammar,
         usage: el.usage,
@@ -150,8 +160,13 @@ export class GptService {
     sentencesAndIndexes: VocabularyGenerateMetaDto[],
   ): Promise<VocabMetaDto[]> {
     try {
+      console.log('Start get vocabulary meta');
+
+      if (sentencesAndIndexes.length == 0) {
+        return [];
+      }
       const response = await this.gptClient.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: this.model,
         messages: [
           {
             role: 'system',
@@ -165,6 +180,8 @@ export class GptService {
       }
       vocabularyMeta = JSON.parse(response.choices[0].message.content);
       if (vocabularyMeta.length == 0) return [];
+      console.log('Done get vocabulary meta');
+
       return vocabularyMeta.map((el) => ({
         word: el.word,
         meaning: el.meaning,

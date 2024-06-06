@@ -11,6 +11,7 @@ import {
   ParseFilePipe,
   Post,
   Put,
+  Query,
   Req,
   Res,
   UploadedFiles,
@@ -56,6 +57,7 @@ import { DeleteGrammarDto } from './dtos/DeleteGrammar.dto';
 import { MailerService } from '@nest-modules/mailer';
 import { fileFilter } from '../users/helpers/file-filter.helper';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { CEFR } from '../../common/constants/cefr-level';
 
 @Controller('teacher')
 @ApiTags('teacher')
@@ -351,10 +353,23 @@ export class TeacherController {
     description: `List lessons by class id.`,
   })
   @UseGuards(RoleAuthGuard([Role.TEACHER]))
-  async listLessons(@Req() req, @Res() res, @Param('classId') classId: string) {
+  async listLessons(
+    @Req() req,
+    @Res() res,
+    @Param('classId') classId: string,
+    @Query('level') level: CEFR | 'ALL',
+    @Query('search') search: string,
+    @Query('status') status: LessonStatus | 'ALL',
+  ) {
     try {
       const user = req.user;
-      const lessons = await this.lessonService.listLessons(classId, user);
+      const lessons = await this.lessonService.listLessons(
+        classId,
+        user,
+        level,
+        search,
+        status,
+      );
       res.status(200).json({
         message: 'List lesson successfully.',
         status: ApiResponseStatus.SUCCESS,

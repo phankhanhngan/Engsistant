@@ -1,12 +1,12 @@
 import { split, Syntax } from 'sentence-splitter';
 
 export const generatePastelColor = () => {
-  const R = Math.floor(Math.random() * 127 + 127);
-  const G = Math.floor(Math.random() * 127 + 127);
-  const B = Math.floor(Math.random() * 127 + 127);
+  const R = Math.floor(Math.random() * 127 + 100);
+  const G = Math.floor(Math.random() * 127 + 100);
+  const B = Math.floor(Math.random() * 127 + 100);
 
   const rgb = (R << 16) + (G << 8) + B;
-  return `#${rgb.toString(16)}`;
+  return `#${rgb.toString(16).padStart(6, '0')}`;
 };
 
 export const randomEnumValue = (enumeration) => {

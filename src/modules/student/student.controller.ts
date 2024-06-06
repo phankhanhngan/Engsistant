@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -6,6 +7,8 @@ import {
   Inject,
   Logger,
   Param,
+  Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -13,7 +16,11 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { ApiResponseStatus, Role } from 'src/common/enum/common.enum';
+import {
+  ApiResponseStatus,
+  LessonStatus,
+  Role,
+} from 'src/common/enum/common.enum';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RoleAuthGuard } from 'src/common/guards/role-auth.guard';
 import { UsersService } from '../users/users.service';
@@ -21,11 +28,11 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ClassRtnDto } from '../users/dtos/ClassRtn.dto';
 import {
   BaseSwaggerResponseDto,
-  GetLessonResponse,
   ListLessonResponse,
   StudentGetLessonResponse,
 } from 'src/common/swagger_types/swagger-type.dto';
 import { LessonService } from '../lesson/lesson.service';
+import { CEFR } from '../../common/constants/cefr-level';
 
 @Controller('student')
 @ApiTags('student')
@@ -97,10 +104,23 @@ export class StudentController {
     description: `List lessons.`,
   })
   @UseGuards(RoleAuthGuard([Role.STUDENT]))
-  async listLessons(@Req() req, @Res() res, @Param('classId') classId: string) {
+  async listLessons(
+    @Req() req,
+    @Res() res,
+    @Param('classId') classId: string,
+    @Query('level') level: CEFR | 'ALL',
+    @Query('search') search: string,
+    @Query('status') status: LessonStatus | 'ALL',
+  ) {
     try {
       const user = req.user;
-      const lessons = await this.lessonService.listLessons(classId, user);
+      const lessons = await this.lessonService.listLessons(
+        classId,
+        user,
+        level,
+        search,
+        status,
+      );
       res.status(200).json({
         message: 'List lesson successfully.',
         status: ApiResponseStatus.SUCCESS,
