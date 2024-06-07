@@ -141,7 +141,9 @@ export class TeacherController {
         message: 'List all highlighted words and grammar level successfully',
         status: ApiResponseStatus.SUCCESS,
         vocabularies: recommendVocabularies,
-        grammars: recommendGrammars,
+        grammars: recommendGrammars.filter(
+          (grammar) => grammar.grammars.length > 0,
+        ),
       });
     } catch (error) {
       this.logger.error(

@@ -95,6 +95,15 @@
           "primary": false,
           "nullable": true,
           "mappedType": "string"
+        },
+        "canva_user_id": {
+          "name": "canva_user_id",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "mappedType": "string"
         }
       },
       "name": "users",

@@ -22,6 +22,7 @@ import { GoogleClassroomModule } from './modules/google_classroom/google-classro
 import { TeacherModule } from './modules/teacher/teacher.module';
 import { StudentModule } from './modules/student/student.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { CanvaModule } from './modules/canva/canva.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { AdminModule } from './modules/admin/admin.module';
     TeacherModule,
     StudentModule,
     AdminModule,
+    CanvaModule,
   ],
 
   controllers: [AppController],
@@ -82,9 +84,15 @@ import { AdminModule } from './modules/admin/admin.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(PreauthMiddleware).forRoutes({
-      path: 'auth/login/google',
-      method: RequestMethod.POST,
-    });
+    consumer.apply(PreauthMiddleware).forRoutes(
+      {
+        path: 'auth/login/google',
+        method: RequestMethod.POST,
+      },
+      {
+        path: 'auth/login/canva',
+        method: RequestMethod.POST,
+      },
+    );
   }
 }

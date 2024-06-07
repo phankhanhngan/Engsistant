@@ -2,8 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { separateSentences } from './common/utils/utils';
-import { detectLevel } from './modules/detect/detect.service';
+import * as cookieParser from 'cookie-parser';
 import {
   HttpException,
   HttpStatus,
@@ -40,6 +39,8 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOrigin,
   });
+
+  app.use(cookieParser('SECRET GOES HERE'));
 
   app.useGlobalPipes(
     new ValidationPipe({

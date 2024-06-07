@@ -37,4 +37,7 @@ export class User extends BaseUUID {
 
   @ManyToMany(() => Class)
   classes: Collection<Class>;
+
+  @Property({ nullable: true })
+  canvaUserId?: string;
 }

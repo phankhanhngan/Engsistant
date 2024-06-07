@@ -77,12 +77,13 @@ export class GptService {
       if (filteredSentences.length == 0) {
         return [];
       }
+      const grammarPrompt = recommendGrammarsPrompt(filteredSentences, level);
       const response = await this.gptClient.chat.completions.create({
         model: this.model,
         messages: [
           {
             role: 'system',
-            content: recommendGrammarsPrompt(filteredSentences, level),
+            content: grammarPrompt,
           },
         ],
       });
@@ -145,7 +146,7 @@ export class GptService {
       return grammarMeta.map((el) => ({
         grammar: el.grammar,
         usage: el.usage,
-        example: el.examples,
+        example: el.examples ?? [],
       }));
     } catch (error) {
       this.logger.error('Calling getGrammarMeta()', error, GptService.name);

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpException,
   HttpStatus,
@@ -27,6 +28,11 @@ import { UserRtnDto } from './dtos/UserRtnDto.dto';
 import { JwtService } from '@nestjs/jwt';
 import { plainToInstance } from 'class-transformer';
 import { GoogleLoginTypeDTO } from 'src/common/swagger_types/swagger-type.dto';
+import { LoginCanvaDto } from './dtos/LoginCanvaDto.dto';
+import { NONCE_EXPIRY_MS } from '../../common/constants/common';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { User } from '../../entities';
+import { EntityRepository } from '@mikro-orm/mysql';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -36,6 +42,8 @@ export class AuthController {
     private readonly userService: UsersService,
     private readonly jwtService: JwtService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    @InjectRepository(User)
+    private readonly userRepository: EntityRepository<User>,
     private readonly oauth2Client: OAuth2Client,
   ) {}
 
@@ -57,6 +65,82 @@ export class AuthController {
         message: 'Login Successfully',
         status: ApiResponseStatus.SUCCESS,
         token: accessToken,
+      });
+    } catch (error) {
+      this.logger.error('Calling login()', error, AuthController.name);
+      throw error;
+    }
+  }
+
+  @Get('configuration/start')
+  async configCanva(@Res() res: Response, @Req() req) {
+    try {
+      const { state } = req.query;
+      // Generate a nonce
+      const nonce = crypto.randomUUID();
+
+      // Create an expiry time for the nonce
+      const nonceExpiry = Date.now() + NONCE_EXPIRY_MS;
+
+      // Store the nonce and expiry time in a stringified JSON array
+      const nonceWithExpiry = JSON.stringify([nonce, nonceExpiry]);
+
+      // Store the nonce and expiry time in a cookie
+      res.cookie('nonceWithExpiry', nonceWithExpiry, {
+        httpOnly: true,
+        secure: true,
+        signed: true,
+        maxAge: NONCE_EXPIRY_MS,
+      });
+      const params = new URLSearchParams({
+        state,
+        nonce,
+      });
+
+      return res.redirect(
+        302,
+        `https://www.canva.com/apps/configure/link?${params.toString()}`,
+      );
+    } catch (error) {
+      this.logger.error('Calling login()', error, AuthController.name);
+      throw error;
+    }
+  }
+
+  @Post('login/canva')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: 200,
+    type: GoogleLoginTypeDTO,
+  })
+  async loginCanva(
+    @Res() res: Response,
+    @Req() req,
+    @Body() loginCanvaDto: LoginCanvaDto,
+  ) {
+    try {
+      const firebaseInfo = req.firebaseUser;
+      if (new Date(firebaseInfo.exp * 1000) < new Date()) {
+        throw new HttpException('Token expired', HttpStatus.UNAUTHORIZED);
+      }
+
+      const accessToken = await this.authService.googleLogin(firebaseInfo);
+      const user = await this.userService.getUserByEmail(firebaseInfo.email);
+
+      // decode canva token
+      const decoded = this.jwtService.decode(loginCanvaDto.canvaUserToken);
+      if (decoded == null) {
+        throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
+      }
+      if (decoded['userId'] != null && user.canvaUserId == null) {
+        user.canvaUserId = decoded['userId'];
+        this.userRepository.persistAndFlush(user);
+      }
+      return res.status(200).json({
+        message: 'Login Successfully',
+        status: ApiResponseStatus.SUCCESS,
+        token: accessToken,
+        state: loginCanvaDto.canvaState,
       });
     } catch (error) {
       this.logger.error('Calling login()', error, AuthController.name);
