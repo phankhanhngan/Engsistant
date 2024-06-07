@@ -33,6 +33,7 @@ import { NONCE_EXPIRY_MS } from '../../common/constants/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { User } from '../../entities';
 import { EntityRepository } from '@mikro-orm/mysql';
+import * as crypto from 'crypto';
 
 @Controller('auth')
 @ApiTags('auth')
