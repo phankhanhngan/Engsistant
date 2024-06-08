@@ -105,18 +105,20 @@ export class CanvaController {
       });
       const lessons = await classroom.lessons.loadItems();
 
+      const lessonsMap = await Promise.all(
+        lessons
+          .filter((l) => l.status === LessonStatus.READY)
+          .map(async (l) => {
+            const { class: clazz, ...others } =
+              await this.lessonService.getLesson(l.id, user);
+            return others;
+          }),
+      );
+
       return res.status(200).json({
         message: 'List all classes successfully',
         status: ApiResponseStatus.SUCCESS,
-        lessons: lessons
-          .filter((l) => l.status === LessonStatus.READY)
-          .map((l) => ({
-            id: l.id,
-            name: l.name,
-            description: l.description,
-            cover: l.cover,
-            level: l.level,
-          })),
+        lessons: lessonsMap,
       });
     } catch (error) {
       this.logger.error('Calling listLessons()', error, CanvaController.name);
