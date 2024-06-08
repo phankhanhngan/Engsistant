@@ -115,6 +115,7 @@ export class CanvaController {
             name: l.name,
             description: l.description,
             cover: l.cover,
+            level: l.level,
           })),
       });
     } catch (error) {
