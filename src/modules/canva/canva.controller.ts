@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  NotFoundException,
   Param,
   Post,
   Req,
@@ -15,7 +16,6 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiResponseStatus } from 'src/common/enum/common.enum';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CanvaService } from './canva.service';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Class } from '../../entities/class.entity';
@@ -33,6 +33,38 @@ export class CanvaController {
     private readonly lessonService: LessonService,
   ) {}
 
+  @Post('/get-user')
+  @ApiResponse({
+    status: 200,
+    description: `Get user by canva token`,
+  })
+  async checkConnect(@Req() req, @Res() res) {
+    try {
+      const { token: canvaToken } = req.body;
+      const user = await this.canvaService.decodeToken(canvaToken);
+      if (!user) {
+        return res.status(200).json({
+          message: 'Get user by canva token successfully',
+          status: ApiResponseStatus.SUCCESS,
+          user: null,
+        });
+      }
+      return res.status(200).json({
+        message: 'Get user by canva token successfully',
+        status: ApiResponseStatus.SUCCESS,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          photo: user.photo,
+        },
+      });
+    } catch (error) {
+      this.logger.error('Calling checkConnect()', error, CanvaController.name);
+      throw error;
+    }
+  }
+
   @Post('/classes')
   @ApiResponse({
     status: 200,
@@ -42,7 +74,9 @@ export class CanvaController {
     try {
       const { token: canvaToken } = req.body;
       const user = await this.canvaService.decodeToken(canvaToken);
-
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
       const classrooms = await this.classRepository.find({
         owner: user,
       });
@@ -67,6 +101,9 @@ export class CanvaController {
     try {
       const { token: canvaToken } = req.body;
       const user = await this.canvaService.decodeToken(canvaToken);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
       const classroom = await this.classRepository.findOneOrFail({
         id: classId,
         owner: user,
@@ -102,7 +139,13 @@ export class CanvaController {
     try {
       const { token: canvaToken } = req.body;
       const user = await this.canvaService.decodeToken(canvaToken);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
       const lesson = await this.lessonService.getLesson(classId, user);
+      if (!lesson) {
+        throw new NotFoundException('Lesson not found');
+      }
       return res.status(200).json({
         message: 'List all classes successfully',
         status: ApiResponseStatus.SUCCESS,
