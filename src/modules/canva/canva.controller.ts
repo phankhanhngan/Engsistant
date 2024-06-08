@@ -1,21 +1,16 @@
 import {
-  Body,
   Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
   Inject,
   NotFoundException,
   Param,
   Post,
   Req,
   Res,
-  UseGuards,
 } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiResponseStatus } from 'src/common/enum/common.enum';
+import { ApiResponseStatus, LessonStatus } from 'src/common/enum/common.enum';
 import { CanvaService } from './canva.service';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Class } from '../../entities/class.entity';
@@ -113,12 +108,14 @@ export class CanvaController {
       return res.status(200).json({
         message: 'List all classes successfully',
         status: ApiResponseStatus.SUCCESS,
-        lessons: lessons.map((l) => ({
-          id: l.id,
-          name: l.name,
-          description: l.description,
-          cover: l.cover,
-        })),
+        lessons: lessons
+          .filter((l) => l.status === LessonStatus.READY)
+          .map((l) => ({
+            id: l.id,
+            name: l.name,
+            description: l.description,
+            cover: l.cover,
+          })),
       });
     } catch (error) {
       this.logger.error('Calling listLessons()', error, CanvaController.name);
