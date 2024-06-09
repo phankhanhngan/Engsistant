@@ -159,9 +159,12 @@ export class UsersService {
     }
   }
 
-  async listClasses(user: User): Promise<ClassRtnDto[]> {
+  async listClasses(user: User, search: string | null): Promise<ClassRtnDto[]> {
     try {
-      const classes = await user.classes.loadItems();
+      let classes = await user.classes.loadItems();
+      if (search) {
+        classes = classes.filter((c) => c.name.includes(search));
+      }
       return (
         (await Promise.all(
           classes?.map(async (c) => {

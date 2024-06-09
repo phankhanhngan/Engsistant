@@ -51,10 +51,14 @@ export class StudentController {
   })
   @Get('/my-classes')
   @UseGuards(RoleAuthGuard([Role.STUDENT]))
-  async listClasses(@Res() res, @Req() req) {
+  async listClasses(
+    @Res() res,
+    @Req() req,
+    @Query('search') search: string | null,
+  ) {
     try {
       const user = await this.usersService.getUserByEmail(req.user.email);
-      const classes = await this.usersService.listClasses(user);
+      const classes = await this.usersService.listClasses(user, search);
       return res.status(200).json({
         message: 'Get my classes successfully',
         status: ApiResponseStatus.SUCCESS,

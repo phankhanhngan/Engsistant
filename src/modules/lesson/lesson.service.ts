@@ -289,7 +289,7 @@ export class LessonService {
     classId: string,
     user: User,
     level: CEFR | 'ALL',
-    search?: string,
+    search?: string | null,
     status?: LessonStatus | 'ALL',
   ): Promise<ListLessonResponseDto[]> {
     try {

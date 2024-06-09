@@ -17,9 +17,14 @@ export class TeacherService {
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
-  async listClasses(user: User): Promise<ClassRtnDto[]> {
+  async listClasses(user: User, search: string | null): Promise<ClassRtnDto[]> {
     try {
-      const classes = await this.classRepository.find({ owner: user });
+      const filter = { owner: user };
+      if (search) {
+        filter['name'] = { $like: `%${search}%` };
+      }
+
+      const classes = await this.classRepository.find({ ...filter });
 
       const classesMap =
         (await Promise.all(

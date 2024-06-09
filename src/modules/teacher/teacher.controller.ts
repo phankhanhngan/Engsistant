@@ -82,10 +82,14 @@ export class TeacherController {
     description: `List all imported classes of teacher.`,
   })
   @UseGuards(RoleAuthGuard([Role.TEACHER]))
-  async listClasses(@Req() req, @Res() res) {
+  async listClasses(
+    @Req() req,
+    @Res() res,
+    @Query('search') search: string | null,
+  ) {
     try {
       const user = req.user;
-      const classes = await this.teacherService.listClasses(user);
+      const classes = await this.teacherService.listClasses(user, search);
       res.status(200).json({
         message: 'List all classes successfully',
         status: ApiResponseStatus.SUCCESS,
@@ -360,7 +364,7 @@ export class TeacherController {
     @Res() res,
     @Param('classId') classId: string,
     @Query('level') level: CEFR | 'ALL',
-    @Query('search') search: string,
+    @Query('search') search: string | null,
     @Query('status') status: LessonStatus | 'ALL',
   ) {
     try {

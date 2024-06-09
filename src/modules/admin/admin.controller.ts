@@ -72,7 +72,7 @@ export class AdminController {
     type: AdminListUsers,
   })
   @UseGuards(RoleAuthGuard([Role.ADMIN]))
-  async listUsers(@Query() role: Role, @Query() search: string) {
+  async listUsers(@Query() role: Role, @Query() search: string | null) {
     try {
       // List all users
       const users = await this.userService.listUsers(role, search);
