@@ -23,6 +23,7 @@ import { TeacherModule } from './modules/teacher/teacher.module';
 import { StudentModule } from './modules/student/student.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { CanvaModule } from './modules/canva/canva.module';
+import { AWSModule } from './modules/aws/aws.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { CanvaModule } from './modules/canva/canva.module';
     StudentModule,
     AdminModule,
     CanvaModule,
+    AWSModule,
   ],
 
   controllers: [AppController],

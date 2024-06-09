@@ -9,6 +9,10 @@ import { ConfigService } from '@nestjs/config';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 
+//dotenv
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 @Injectable()
 export class AWSService {
   private readonly s3Client: S3Client;
@@ -17,6 +21,9 @@ export class AWSService {
     private readonly configService: ConfigService,
   ) {
     try {
+      console.log('AWS_BUCKET_NAME', process.env.AWS_BUCKET_NAME);
+      console.log('AWS_BUCKET_REGION', process.env.AWS_BUCKET_REGION);
+      console.log('AWS_ACCESS_KEY', process.env.AWS_ACCESS_KEY);
       const clientParams = {
         region: process.env.AWS_BUCKET_REGION,
         credentials: {
@@ -65,7 +72,7 @@ export class AWSService {
     }
   }
 
-  async bulkPutObject(
+  async putObject(
     file: Express.Multer.File,
     folderPath: string,
   ): Promise<string> {

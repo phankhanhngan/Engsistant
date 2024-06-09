@@ -6,8 +6,6 @@ import { User } from 'src/entities';
 import * as bcrypt from 'bcrypt';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { GoogleClassroomService } from '../google_classroom/google-classroom.service';
-import { UpdateUserDto } from '../admin/dtos/UpdateUser.dto';
-import { plainToClass } from 'class-transformer';
 import { UserRtnDto } from '../auth/dtos/UserRtnDto.dto';
 import { Class } from 'src/entities/class.entity';
 import { ClassRtnDto } from './dtos/ClassRtn.dto';
@@ -98,40 +96,62 @@ export class UsersService {
     }
   }
 
-  async updateUser(id: string, updateDto: UpdateUserDto): Promise<UserRtnDto> {
+  async updateUser(
+    id: string,
+    name?: string | null,
+    image?: string | null,
+    role?: Role | null,
+  ): Promise<UserRtnDto> {
     try {
       const user = await this.getUserById(id);
       if (!user)
         throw new NotFoundException(`Can not find user with id: ${id}`);
 
-      if (updateDto.role) user.role = updateDto.role;
-      if (updateDto.googleRefreshToken)
-        user.googleRefreshToken = updateDto.googleRefreshToken;
-      if (updateDto.name) user.name = updateDto.name;
-      if (updateDto.authId) user.authId = updateDto.authId;
-      await this.userRepository.persistAndFlush(user);
+      if (image) user.photo = image;
+      if (name) user.name = name;
+      if (role) user.role = role;
 
-      return plainToClass(UserRtnDto, user);
+      await this.userRepository.persistAndFlush(user);
+      return user;
     } catch (error) {
       this.logger.error('Calling updateUser()', error, UsersService.name);
       throw error;
     }
   }
 
-  async listUsers(): Promise<UserRtnDto[]> {
+  async listUsers(role: Role | null, search: string | null) {
     try {
-      const users = await this.userRepository.findAll();
-      return (
-        users?.map((user) => ({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          photo: user.photo,
-          created_at: user.created_at,
-          updated_at: user.updated_at,
-          googleId: user.authId,
-        })) ?? []
+      const filter = {};
+      if (role) filter['role'] = role;
+      if (search) filter['name'] = { $like: `%${search}%` };
+
+      const users = await this.userRepository.findAll({ ...filter });
+      return await Promise.all(
+        users?.map(async (user) => {
+          let numberOfClasses = null;
+          let numberOfLessons = null;
+
+          if (user.role === Role.TEACHER) {
+            // count classes
+            const classes = await this.classRepository.find({ owner: user });
+            // count students
+            console.log(classes);
+            numberOfClasses = classes.length;
+            // count lessons
+            numberOfLessons = classes
+              .map((c) => c.lessons.loadItems())
+              .flat().length;
+          }
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            photo: user.photo,
+            role: user.role,
+            numberOfClasses: numberOfClasses,
+            numberOfLessons: numberOfLessons,
+          };
+        }) ?? [],
       );
     } catch (error) {
       this.logger.error('Calling listUsers()', error, UsersService.name);

@@ -7,6 +7,8 @@ import {
   Inject,
   Logger,
   Post,
+  Put,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -33,7 +35,7 @@ export class AdminController {
   ) {}
   // Update
 
-  @Post('/users/:id')
+  @Put('/users/:id')
   @UseGuards(RoleAuthGuard([Role.ADMIN]))
   @ApiResponse({
     status: 200,
@@ -43,7 +45,12 @@ export class AdminController {
     try {
       // Update a user
       const id = req.params.id;
-      const user = await this.userService.updateUser(id, body);
+      const user = await this.userService.updateUser(
+        id,
+        body.name,
+        body.photo,
+        body.role,
+      );
       res.status(200).json({
         message: 'User updated successfully',
         status: ApiResponseStatus.SUCCESS,
@@ -65,10 +72,10 @@ export class AdminController {
     type: AdminListUsers,
   })
   @UseGuards(RoleAuthGuard([Role.ADMIN]))
-  async listUsers() {
+  async listUsers(@Query() role: Role, @Query() search: string) {
     try {
       // List all users
-      const users = await this.userService.listUsers();
+      const users = await this.userService.listUsers(role, search);
       return {
         message: 'List of users',
         status: ApiResponseStatus.SUCCESS,
