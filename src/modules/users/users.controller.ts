@@ -104,10 +104,26 @@ export class UsersController {
         updateUserDto.name,
         updateUserDto.photo,
       );
+      let numberOfClasses = null;
+      let numberOfLessons = null;
+      if (user.role === Role.TEACHER) {
+        // count classes
+        const classes = await this.userRepository.find({ owner: user });
+        // count students
+        numberOfClasses = classes.length;
+        // count lessons
+        numberOfLessons = classes
+          .map((c) => c.lessons.loadItems())
+          .flat().length;
+      }
       return res.status(200).json({
         message: 'Get current user info successfully',
         status: ApiResponseStatus.SUCCESS,
-        user: updatedUser,
+        user: {
+          ...plainToInstance(UserRtnDto, updatedUser),
+          numberOfClasses,
+          numberOfLessons,
+        },
       });
     } catch (error) {
       this.logger.error(
