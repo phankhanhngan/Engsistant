@@ -84,6 +84,7 @@ export class GoogleClassroomService {
 
   async getToken(code: string) {
     try {
+      console.log('calling getToken, code=', code);
       return await this.oAuth2Client.getToken(code);
     } catch (err) {
       this.logger.error('Calling getToken()', err, GoogleClassroomService.name);
