@@ -83,7 +83,7 @@ export class UsersService {
     try {
       // Get the access token
       const { tokens } = await this.googleService.getToken(code);
-      console.log(tokens);
+      console.log('tokens: ', tokens);
       const refreshToken = tokens.refresh_token;
       if (!refreshToken) return false;
 
