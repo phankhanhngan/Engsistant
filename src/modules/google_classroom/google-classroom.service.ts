@@ -70,7 +70,7 @@ export class GoogleClassroomService {
         include_granted_scopes: true,
         // Include the state parameter to reduce the risk of CSRF attacks.
         // state: state,
-        prompt: 'select_account',
+        prompt: 'consent',
       });
     } catch (err) {
       this.logger.error(
