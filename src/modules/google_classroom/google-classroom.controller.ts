@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
   Post,
   Req,
   Res,
@@ -25,6 +26,10 @@ import {
   AuthorizeTypeDto,
   ListClassDTO,
 } from 'src/common/swagger_types/swagger-type.dto';
+import { EntityRepository } from '@mikro-orm/mysql';
+import { Class } from 'src/entities/class.entity';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { User } from 'src/entities';
 
 @Controller('google/classes')
 @ApiTags('google/classes')
@@ -33,6 +38,10 @@ export class GoogleClassroomController {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
     private readonly googleClassroomService: GoogleClassroomService,
+    @InjectRepository(Class)
+    private readonly classRepository: EntityRepository<Class>,
+    @InjectRepository(User)
+    private readonly userRepository: EntityRepository<User>,
   ) {}
 
   @Post('/authorize')
@@ -86,6 +95,58 @@ export class GoogleClassroomController {
         message: 'List all classes successfully',
         status: ApiResponseStatus.SUCCESS,
         classes: classrooms,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Calling listClassroom()',
+        error,
+        GoogleClassroomController.name,
+      );
+      throw error;
+    }
+  }
+
+  @Post('/:classId/sync-students')
+  @ApiResponse({
+    status: 200,
+    description: `Sync students of specific class.`,
+  })
+  @UseGuards(RoleAuthGuard([Role.TEACHER]))
+  async syncStudents(
+    @Req() req,
+    @Res() res: Response,
+    @Param('classId') classId: string,
+  ) {
+    try {
+      const user = req.user;
+      const clazz = await this.classRepository.findOne({
+        id: classId,
+        owner: user,
+      });
+      if (!clazz) {
+        res.status(400).json({
+          message: 'Class not found',
+          status: ApiResponseStatus.FAILURE,
+        });
+      }
+
+      await this.googleClassroomService.syncStudents(user, clazz);
+
+      const updatedListStudents = await this.userRepository.find(
+        {
+          classes: clazz,
+          role: Role.STUDENT,
+        },
+        { fields: ['id', 'name', 'email', 'photo'] },
+      );
+
+      res.status(200).json({
+        message: 'Sync students successfully',
+        status: ApiResponseStatus.SUCCESS,
+        students: updatedListStudents.map((el) => {
+          const { classes, ...rest } = el;
+          return rest;
+        }),
       });
     } catch (error) {
       this.logger.error(

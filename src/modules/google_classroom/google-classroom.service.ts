@@ -286,6 +286,118 @@ export class GoogleClassroomService {
     }
   }
 
+  async syncStudents(user: User, clazz: Class) {
+    try {
+      // Query for the user's access token
+      if (user.googleRefreshToken == null) {
+        throw new HttpException(
+          'User has not authorize Google Classroom yet.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Get access token from refresh token
+      this.oAuth2Client.setCredentials({
+        refresh_token: user.googleRefreshToken,
+      });
+
+      // Get the classroom data
+      const classroom = google.classroom({
+        version: 'v1',
+        auth: this.oAuth2Client,
+      });
+
+      const studentsResponse = await classroom.courses.students.list({
+        courseId: clazz.googleCourseId,
+      });
+
+      const studentInfos =
+        studentsResponse.data?.students?.map((student) => {
+          return {
+            email: student.profile.emailAddress,
+            courseId: student.courseId,
+            name: student.profile.name.fullName,
+          };
+        }) ?? [];
+      await Promise.all(
+        studentInfos?.map(async (student) => {
+          // if student is not in the database, create a new user
+          // if user exists and is in the class, skip
+          // if user exists and is not in the class, add to the class and send invitation mail
+
+          const currentStudent = await this.userRepository.findOne(
+            {
+              email: student.email,
+            },
+            { populate: ['classes'] },
+          );
+
+          if (currentStudent.name == null) {
+            const newUser = new User();
+            newUser.id = randomUUID();
+            newUser.email = student.email;
+            newUser.role = Role.STUDENT;
+            newUser.name = student.name;
+            await this.userRepository.persistAndFlush(newUser);
+          }
+
+          const existingUser = await this.userRepository.findOne(
+            {
+              email: currentStudent.email,
+            },
+            { populate: ['classes'] },
+          );
+
+          const classes = await existingUser.classes.loadItems();
+          console.log(
+            existingUser.email,
+            classes.map((c) => c.name),
+          );
+          if (classes.includes(clazz)) {
+            return;
+          }
+
+          existingUser.classes.add(clazz);
+          await this.userRepository.flush();
+
+          // send invitation mail to student
+          this.mailerService
+            .sendMail({
+              to: student.email,
+              subject: 'Invitation to join class',
+              template: 'invite_student',
+              context: {
+                studentName: student.name,
+                teacherName: user.name,
+                joinLink: process.env.CLIENT_URL + '/login',
+                className: clazz.name,
+              },
+            })
+            .then(() => {
+              this.logger.info(
+                `Sent invitation mail to ${student.email} for class ${clazz.name}`,
+              );
+            });
+
+          // return the list of students
+          return await this.userRepository.find(
+            {
+              classes: clazz,
+              role: Role.STUDENT,
+            },
+            { fields: ['id', 'name', 'email', 'photo'] },
+          );
+        }),
+      );
+    } catch (error) {
+      this.logger.error(
+        'Calling listClassroom()',
+        error,
+        GoogleClassroomService.name,
+      );
+      throw error;
+    }
+  }
   async uploadFileToDrive(user: User, file: Express.Multer.File) {
     try {
       this.oAuth2Client.setCredentials({
