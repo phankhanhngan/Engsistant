@@ -144,7 +144,7 @@ export class GoogleClassroomController {
         message: 'Sync students successfully',
         status: ApiResponseStatus.SUCCESS,
         students: updatedListStudents.map((el) => {
-          const { classes, ...rest } = el;
+          const { classes, googleRefreshToken, authId, ...rest } = el;
           return rest;
         }),
       });
