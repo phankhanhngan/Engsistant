@@ -332,7 +332,7 @@ export class GoogleClassroomService {
             { populate: ['classes'] },
           );
 
-          if (currentStudent.name == null) {
+          if (currentStudent == null) {
             const newUser = new User();
             newUser.id = randomUUID();
             newUser.email = student.email;
