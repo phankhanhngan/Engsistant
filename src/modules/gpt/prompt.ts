@@ -11,7 +11,7 @@ export const highlightWordsPrompt = (paragraph: string, level: CEFR) => {
   You are a teacher, you want to teach your student with level ${level} new vocabularies from the paragraph.
   Given the paragraph:
   ${paragraph}
-  Return me list of words that ${level} students should learn in json. The words returned in response must be meaningful, do not return dummy words. The response should only contain the json, no other information.
+  Return me list of vocabularies that ${level} students should learn in json. The vocabularies returned in response must be meaningful, do not return dummy words. The response should only contain the json, no other information.
   Example response:
   {words: ["excuse", "blame", "happen"]}`;
 };
