@@ -44,6 +44,8 @@ export class GptService {
         words = words.concat(
           JSON.parse(response.choices[0].message.content).words,
         );
+        // filter out words not in paragragh
+        words = words.filter((word) => paragraph.includes(word));
       } catch (error) {
         console.log('error', error);
       }
