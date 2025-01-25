@@ -1,73 +1,91 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+## My Final Thesis Project 🎓
+This project was done within 2 months including development and idea refinement.
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+The team has 2 people, @phankhanhnganngan (me) and @kaice88 🌷
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Related repos: 
+https://github.com/phankhanhngan?tab=repositories
+https://github.com/phankhanhngan/CEFR-SP-detect
 
 ## Description
+Engsistant is a system designed to aid English language teachers and tutors in optimizing their lesson preparation time. The system is capable of automatically generating lesson plans and recommending content for these lessons. Each lesson plan includes sections dedicated to vocabulary and grammar, which are fundamental components of learning English. The system offers functionalities tailored to two main user roles: teachers and students.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+**Features for Teachers:**
+- Class Integration: Seamlessly import classes from Google Classroom.
+- Lesson Creation: Effortlessly build comprehensive English lessons.
+- Content Sharing: Share created lessons directly to Google Classroom.
+- Slide Preparation: Import lessons into Canva to create visually appealing slides.
 
-## Installation
 
-```bash
-$ yarn install
-```
+**Features for Students:**
+- Vocabulary and Grammar Learning: Enhance learning through automatically generated lessons.
+- Interactive Learning Tools: Utilize flashcards to reinforce vocabulary and grammar knowledge.
+- Review Marking: Mark vocabulary or grammar items for later review, enabling focused revision.
 
-## Running the app
 
-```bash
-# development
-$ yarn run start
+_1. Users can log in to the system using a Google account._
 
-# watch mode
-$ yarn run start:dev
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/2f3f963f-d1cc-4f67-9b18-15448a8a9dd9" />
 
-# production mode
-$ yarn run start:prod
-```
 
-## Test
+_2. During their first login, users need to register their role._
 
-```bash
-# unit tests
-$ yarn run test
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/a7304632-bf0e-4623-88c0-f201fe961f11" />
 
-# e2e tests
-$ yarn run test:e2e
 
-# test coverage
-$ yarn run test:cov
-```
+ 
+_3. Users can view information about imported classes on the My class screen._
 
-## Support
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/3dfc1dc0-9730-4fe6-b252-20ef52e91055" />
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+_4. As teachers, users can import classes from Google Classroom platform._
 
-## Stay in touch
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/2405a401-d524-4726-a529-dc61fea4751e" />
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+	
+_5. As teachers, users can build lessons by importing paragraphs and choosing the appropriate level and class for each lesson._
 
-## License
+<img width="454" alt="image" src="https://github.com/user-attachments/assets/f0d5d8c3-de5f-4fbe-a85c-96cab8f5c316" />
 
-Nest is [MIT licensed](LICENSE).
+_6. The system will suggest vocabulary and grammar points for users to focus on within paragraphs. Users can also add extra vocabulary by highlighting the desired word and can remove any suggested vocabulary or grammar point as needed._
+
+<img width="454" alt="image" src="https://github.com/user-attachments/assets/ef32396c-4146-4e44-895c-433ccacc8ab4" />
+
+ 
+_7. To complete building the lesson, the user must provide the lesson's name and description. Additionally, the user can review the content and add more vocabulary or grammar points as needed._
+
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/5fbc4e3c-7ac0-412b-9a22-c899877c2d18" />
+
+
+_8. After the lesson is built, the system requires some time to finalize the process. During this time, the lesson status is set to PENDING._
+
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/0c1218e0-ac31-459f-994c-471b04e82bed" />
+
+
+ 
+_9. On the My Lesson screen, users can view details about built lessons and a list of students by class. As teachers, users can sync data from Google Classroom if any new students join the class._
+
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/c0a9d182-bc54-49fc-813d-dfa98846ff51" />
+
+
+_10. After being built, each lesson will be divided into two parts: Vocabulary and Grammar. In the Vocabulary section, users will find information about word meanings, word form classes, phonetic transcriptions, verb meanings, antonyms, synonyms, and examples of how to make sentences with the words. In the Grammar section, users will find information about the uses and examples of each grammar point covered in the lesson. Additionally, teachers can share lesson content to Google Classroom, and student users can download the lesson as a PDF file._
+
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/b5542876-02c2-442b-8f59-36124ba5c89b" />
+
+<img width="454" alt="image" src="https://github.com/user-attachments/assets/faaa28ad-ed24-4c9a-ae86-5eb2eb8f98c0" />
+
+_11. Users can update the content of the lesson, including both the Vocabulary and Grammar sections. Additionally, users can delete any item within the lesson._
+
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/50349dd2-b4f5-4a62-a3b5-24f86073984f" />
+
+ 
+_12. As students, users can utilize flashcards to strengthen their understanding of vocabulary and grammar. They can also mark lesson items for review when necessary._
+
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/6b09ba43-0530-4a6b-90eb-8a7f8521409d" />
+
+
+_13. Users can import the generated lesson content from Engsistant into Canva to automatically create engaging and visually appealing slides! 😉 Magic, right?_
+
+ <img width="454" alt="image" src="https://github.com/user-attachments/assets/6dbeb8be-7bd7-45d2-8b03-5fece9260931" />
+
+
