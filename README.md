@@ -4,8 +4,8 @@ This project was done within 2 months including development and idea refinement.
 The team has 2 people, @phankhanhnganngan (me) and @kaice88 🌷
 
 Related repos: 
-https://github.com/phankhanhngan?tab=repositories
-https://github.com/phankhanhngan/CEFR-SP-detect
+- https://github.com/phankhanhngan?tab=repositories
+- https://github.com/phankhanhngan/CEFR-SP-detect
 
 ## Description
 Engsistant is a system designed to aid English language teachers and tutors in optimizing their lesson preparation time. The system is capable of automatically generating lesson plans and recommending content for these lessons. Each lesson plan includes sections dedicated to vocabulary and grammar, which are fundamental components of learning English. The system offers functionalities tailored to two main user roles: teachers and students.
