@@ -4,7 +4,8 @@ This project was done within 2 months including development and idea refinement.
 The team has 2 people, @phankhanhnganngan (me) and @kaice88 🌷
 
 Related repos: 
-- https://github.com/phankhanhngan?tab=repositories
+- https://github.com/kaice88/Eng-Teaching-Learning-Assistance
+- https://github.com/kaice88/Engsistant-mobile
 - https://github.com/phankhanhngan/CEFR-SP-detect
 
 ## Description
