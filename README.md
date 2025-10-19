@@ -5,6 +5,7 @@ The team has 2 people, @phankhanhnganngan (me) and @kaice88 🌷
 
 Related repos: 
 - https://github.com/kaice88/Eng-Teaching-Learning-Assistance
+- https://github.com/phankhanhngan/Engsistant-Canva-Integrated-App
 - https://github.com/kaice88/Engsistant-mobile
 - https://github.com/phankhanhngan/CEFR-SP-detect
 
